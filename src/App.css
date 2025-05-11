@@ -1,6 +1,6 @@
 /* main-style.css - Modern & Responsive Typing Test */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
 
 :root {
   --bg-color: #1a1c23;
@@ -60,6 +60,34 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.web-name {
+  width: 100%;
+  text-align: center;
+  margin: 1.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #f59e0b, #d97706);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.025em;
+  position: relative;
+  padding-bottom: 0.5rem;
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.web-name::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(to right, #f59e0b, #d97706);
+  border-radius: 3px;
 }
 
 .stats-container {
@@ -290,6 +318,10 @@ body {
     flex: 1;
     min-width: 100px;
   }
+  
+  .web-name {
+    font-size: 2rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -317,6 +349,15 @@ body {
     min-width: 60px;
     padding: 8px 12px;
     font-size: 0.9rem;
+  }
+  
+  .web-name {
+    font-size: 1.75rem;
+    margin: 1rem 0;
+  }
+  
+  .web-name::after {
+    width: 40px;
   }
 }
 

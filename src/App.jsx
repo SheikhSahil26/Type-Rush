@@ -43,7 +43,7 @@ const incorrectRef = useRef(0);
   useEffect(() => {
     const getRandomWords = async () => {
       let str = "";
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 150; i++) {
         str += words[Math.floor(Math.random() * words.length)];
         str += " "
       }
@@ -194,9 +194,8 @@ const incorrectRef = useRef(0);
   return (
     <>
 
-
-
-
+    <h1 className='web-name'>Type-Rush</h1>
+  
       <div className="container">
         <div className="time-card" onClick={() => setTime(Date.now() + 10000)}>10s</div>
         <div className="time-card" onClick={() => setTime(Date.now() + 30000)}>30s</div>
@@ -206,7 +205,7 @@ const incorrectRef = useRef(0);
 
       <div onClick={divClickHandler} style={{ cursor: "text" }}>
 
-        <h1 >
+        <h2>
           {para.split("").map((char, index) => {
             let color = "gray";
             if (index < input.length) {
@@ -236,7 +235,7 @@ const incorrectRef = useRef(0);
 
           })}
 
-        </h1>
+        </h2>
 
 
 
