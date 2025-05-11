@@ -6,6 +6,7 @@ import TimeVsAccuracyChart from './TimeVsAccuracyChart';
 const TypeTestResults = ({
   accuracy,
   raw,
+  actualWpm,
   correct,
   incorrect,
   totalKeystrokes,
@@ -18,7 +19,7 @@ const TypeTestResults = ({
   return (
     <div className="type-test-container">
       <div className="primary-stats">
-        <div className="stat-group"><div className="stat-number">{wpm}</div><div className="stat-label">WPM</div></div>
+        <div className="stat-group"><div className="stat-number">{actualWpm.toFixed(1)}</div><div className="stat-label">WPM</div></div>
         <div className="stat-group"><div className="stat-number">{accuracy.toFixed(1)}%</div><div className="stat-label">Accuracy</div></div>
         <div className="stat-group"><div className="stat-number">{raw.toFixed(1)}</div><div className="stat-label">Raw WPM</div></div>
         <div className="stat-group"><div className="stat-number">{correct + incorrect === 0 ? 0 : Math.round((correct * 100) / (correct + incorrect))}</div><div className="stat-label">Consistency</div></div>

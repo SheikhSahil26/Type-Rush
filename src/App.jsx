@@ -129,6 +129,7 @@ const incorrectRef = useRef(0);
           console.log(durationInMinutes)
           console.log(totalTyped)
           const wpm = (totalTyped / 5) / durationInMinutes;
+          setActualWpm((correctRef.current / 5) / durationInMinutes)
           console.log(wpm)
           setRawWpm(wpm);
           setTypeAccuracy([...typeAccuracyRef.current]); 
@@ -259,6 +260,7 @@ const incorrectRef = useRef(0);
   <TypeTestResults
     accuracy={accuracy}
     raw={rawWpm}
+    actualWpm={actualWpm}
     correct={correctRef.current}
     incorrect={incorrectRef.current}
     totalKeystrokes={input.length}
