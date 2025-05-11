@@ -131,7 +131,7 @@ const incorrectRef = useRef(0);
           const wpm = (totalTyped / 5) / durationInMinutes;
           console.log(wpm)
           setRawWpm(wpm);
-           setTypeAccuracy([...typeAccuracyRef.current]); 
+          setTypeAccuracy([...typeAccuracyRef.current]); 
           console.log(typeAccuracyRef.current)
         } else {
           setAccuracy(0);
@@ -158,7 +158,10 @@ const incorrectRef = useRef(0);
 
 
   const divClickHandler = () => {
+
+  if (showResults===false) {
     inputRef.current?.focus();
+  }
 
   }
 
@@ -177,6 +180,7 @@ const incorrectRef = useRef(0);
     setInput("")
 
     setAccuracy(0)
+    setRawWpm(0);
    typeAccuracyRef.current = []
    setShowResults(false);
 
@@ -199,7 +203,7 @@ const incorrectRef = useRef(0);
       </div>
 
 
-      <div onClick={() => inputRef.current?.focus()} style={{ cursor: "text" }}>
+      <div onClick={divClickHandler} style={{ cursor: "text" }}>
 
         <h1 >
           {para.split("").map((char, index) => {
@@ -249,9 +253,7 @@ const incorrectRef = useRef(0);
         />
       </div>
 
-      <h1>{accuracy}%</h1>
-
-      <h1>{rawWpm}</h1>
+   
 
       {showResults && (
   <TypeTestResults
