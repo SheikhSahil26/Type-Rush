@@ -1,0 +1,126 @@
+/* AuthPages.css */
+.auth-screen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.auth-screen-container {
+  background-color: #2c3e50;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 500px;
+  padding: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: #ecf0f1;
+}
+
+.auth-screen-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.auth-screen-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #ecf0f1;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.form-group input {
+  padding: 12px;
+  border: 1px solid #34495e;
+  background-color: #34495e;
+  color: #ecf0f1;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.error-message {
+  color: #e74c3c;
+  margin-top: -10px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.submit-button {
+  padding: 12px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background-color: #2980b9;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.auth-switch p {
+  margin: 0;
+  color: #bdc3c7;
+}
+
+.switch-button {
+  background: none;
+  border: none;
+  color: #3498db;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 5px;
+  transition: color 0.3s ease;
+}
+
+.switch-button:hover {
+  color: #2980b9;
+}
+
+.forgot-password {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.forgot-password-link {
+  color: #bdc3c7;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.forgot-password-link:hover {
+  color: #3498db;
+}
