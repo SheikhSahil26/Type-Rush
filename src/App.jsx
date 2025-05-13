@@ -5,6 +5,7 @@ import CompeteScreen from './components/CompeteScreen'
 import { useAuthContext } from './context/AuthContext'
 import Login from './pages/Login'
 import HomePage from './pages/HomePage'
+import SignUp from './pages/SignUp'
 
 function App() {
   const {authUser}=useAuthContext();
@@ -13,7 +14,7 @@ function App() {
  <>
     <Routes>
       <Route path="/" element={authUser?<HomePage/>:<Navigate to='/login' />}/>
-      {/* <Route path="/signup" element={authUser ? <Navigate to='/' /> : <Signup/>}/> */}
+      <Route path="/signup" element={authUser ? <Navigate to='/' /> : <SignUp/>}/>
       <Route path="/login" element={authUser ? <Navigate to='/' /> : <Login/>}/>
       
       </Routes>

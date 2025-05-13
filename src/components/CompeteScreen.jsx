@@ -1,24 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import './competeScreen.css';
 import { useFirebase } from '../context/FirebaseContext';
+import { useAuthContext } from '../context/AuthContext';
 
 const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
   const [username, setUsername] = useState('');
   const [onlinePlayers, setOnlinePlayers] = useState([]);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [showUsernamePage, setShowUsernamePage] = useState(true);
+  // const [showUsernamePage, setShowUsernamePage] = useState(true);
   const [error, setError] = useState('');
+ 
+  
+  const {authUser}=useAuthContext()
 
-
-    const {storeUsersToOnlineLobby,usersInLobby}=useFirebase()
+    const {storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer}=useFirebase()
 
     console.log(usersInLobby)
 
+    useEffect(()=>{
+      const setPlayerOnline=async()=>{
+          const res= await storeUsersToOnlineLobby(authUser.username);
+          console.log(res)
+      }
+      setPlayerOnline()
+      
+    },[])
 
-
-
-
-  
   useEffect(() => {
     
     setOnlinePlayers(Object.values(usersInLobby))
@@ -26,37 +33,25 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
     
   }, [usersInLobby]);
 
-  const handleSubmitUsername = async() => {
-    if (username.trim().length >= 3) {
-
-        const res= await storeUsersToOnlineLobby(username);
-        console.log(res)
-
-        if(res==="username already exist"){
-            setError('username already exist');
-        }
-        else{
-            setShowUsernamePage(false);
-            setError('');
-        }
-
-
-      
-    } else {
-      setError('Username must be at least 3 characters');
-    }
-  };
+  
 
   const handleSelectPlayer = (player) => {
     if (player.status === 'busy') {
-      return;
+      console.log("player is already matching with others")
+      return
     }
+    console.log(player)
     setSelectedPlayer(player);  
   };
 
-  const handleStartCompetition = () => {
+  
+
+
+  const handleStartCompetition = async() => {
     if (selectedPlayer) {
-      onStartCompetition(username, selectedPlayer);
+      //when one user selects other for match that user will get challenge to accept or decline
+      const res=await sendChallengeToPlayer(selectedPlayer.username,authUser.username)
+      
     }
   };
 
@@ -73,27 +68,7 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
           </button>
         </div>
 
-        {showUsernamePage ? (
-          <div className="username-page">
-            <div className="username-input-group">
-              <label>Choose a username:</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username"
-              />
-              {error && <p className="error-message">{error}</p>}
-            </div>
-            <button
-              onClick={handleSubmitUsername}
-              className="continue-button"
-            >
-              Continue
-            </button>
-          </div>
-        ) : (
-          <div className="player-selection-page">
+      <div className="player-selection-page">
             <h3>Select a player to challenge:</h3>
             <div className="online-players-list">
               {onlinePlayers.map(player => (
@@ -119,15 +94,16 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
                 </div>
               ))}
             </div>
+           
             <div className="action-buttons">
               <button
-                onClick={() => setShowUsernamePage(true)}
+                onClick={handleStartAndCloseCompeteMode}
                 className="back-button"
               >
                 Back
               </button>
               <button
-                // onClick={handleStartCompetition}
+                onClick={handleStartCompetition}
                 disabled={!selectedPlayer}
                 className={`start-competition-button ${selectedPlayer ? 'active' : 'disabled'}`}
               >
@@ -135,7 +111,6 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
               </button>
             </div>
           </div>
-        )}
       </div>
     </div>
   );

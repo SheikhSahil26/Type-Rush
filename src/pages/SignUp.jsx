@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import './login.css';
-import useLogin from '../hooks/useLogin';
-import { Link } from 'react-router-dom';
+import useSignUp from '../hooks/useSignUp';
 
-
-const Login = () => {
+const SignUp = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-    const {login}=useLogin()
+    const {signup}=useSignUp()
   const handleSubmit =async (e) => {
     e.preventDefault();
 
@@ -24,7 +22,7 @@ const Login = () => {
 
     setError("");
 
-    await login({username,password});
+    await signup({username,password});
 
     
     
@@ -36,7 +34,7 @@ const Login = () => {
     <div className="auth-screen-overlay">
       <div className="auth-screen-container">
         <div className="auth-screen-header">
-          <h2>Login to Type-Rush</h2>
+          <h2>Sign-Up to Type-Rush</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -72,16 +70,13 @@ const Login = () => {
 
           <div className="auth-switch">
             <p>Don't have an account? 
-              <Link to={'/signup'}>
               <button 
                 type="button" 
                 className="switch-button"
+                
               >
                 Sign Up
               </button>
-              
-              </Link>
-              
             </p>
           </div>
 
@@ -94,4 +89,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;

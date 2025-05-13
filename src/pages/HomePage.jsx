@@ -6,7 +6,7 @@ import TypeTestResults from '../components/TypeTestResults'
 import {Link} from 'react-router-dom'
 import CompeteScreen from '../components/CompeteScreen'
 import { useAuthContext } from '../context/AuthContext'
-
+import { useFirebase } from '../context/FirebaseContext'
 
 
 function HomePage() {
@@ -30,12 +30,12 @@ function HomePage() {
   const [competeMode,setCompeteMode]=useState(false);
 
 
-
+  const {storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby}=useFirebase()
   
   const {authUser}=useAuthContext()
 
   
-
+  console.log(authUser)
   
   
 
@@ -202,9 +202,15 @@ const incorrectRef = useRef(0);
 
   }
 
-  const handleStartAndCloseCompeteMode=()=>{
+  const handleStartAndCloseCompeteMode=async()=>{
+    if(competeMode===true){
+      await deleteUserFromOnlineLobby(authUser.username);
+    }
     setCompeteMode((prev)=>!prev);
   }
+
+
+
 
   // const onStartCompetition=(username,selectedPlayer)=>{
 
@@ -277,7 +283,11 @@ const incorrectRef = useRef(0);
         />
       </div>
 
-      {competeMode && (<CompeteScreen handleStartAndCloseCompeteMode={handleStartAndCloseCompeteMode}/>)}
+      {competeMode && (<CompeteScreen 
+      handleStartAndCloseCompeteMode={handleStartAndCloseCompeteMode}
+      
+      />
+      )}
 
    
 
@@ -300,6 +310,7 @@ const incorrectRef = useRef(0);
       <div className="reattempt-button" onClick={handleRestart}>reattempt</div>
 
 
+          <div className="reattempt-button" onClick={handleRestart}>Logout</div>
 
 
     </>

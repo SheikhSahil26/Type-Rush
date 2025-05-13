@@ -5,7 +5,7 @@ import { initializeApp } from "firebase/app";
 import { createContext ,useContext} from 'react'
 import { useState,useEffect } from "react";
 
-import { getDatabase ,get, set , ref,onValue} from 'firebase/database';
+import { getDatabase ,get, set , ref,onValue,remove,update } from 'firebase/database';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -29,7 +29,7 @@ export const useFirebase= ()=>useContext(FirebaseContext)
 
 export const FirebaseContextProvider=(props)=>{
 
-   
+//means the user has entered the compete mode !!!!
 const storeUsersToOnlineLobby = async (username) => {
   const userRef = ref(database, `myDB/online-users/${username}`);
 
@@ -45,7 +45,7 @@ const storeUsersToOnlineLobby = async (username) => {
     await set(userRef, {
       username: username,
       online: true,
-      status:'busy'
+      status:'free'
     });
 
     console.log("User stored successfully.");
@@ -54,9 +54,36 @@ const storeUsersToOnlineLobby = async (username) => {
     console.error("Error checking username:", error);
   }
 };
+//delete user or in game terms remove players from realtime db  !!! user exited compete mode!!!
+const deleteUserFromOnlineLobby = async (username) => {
+  const userRef = ref(database, `myDB/online-users/${username}`);
 
-const sendChallengeToPlayer=async(selectedPlayer)=>{
-    
+  try {
+    await remove(userRef);
+    console.log(`User '${username}' deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting user:", error);
+  }
+};
+
+ //when one user selects other for match that user will get challenge to accept or decline
+const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
+    const userRef=ref(database,`myDB/online-users/${selectedPlayerUsername}/notification`);
+
+    try {
+      const snapshot = await get(userRef);
+
+      console.log(snapshot.val());
+
+    await set(userRef,{
+      challenger:challengerUsername,
+      message:"wanna a type together"
+    })
+
+    console.log("Challenge notification sent successfully.");
+  } catch (error) {
+    console.error("Error sending challenge notification:", error);
+  }
 }
 
 
@@ -77,7 +104,7 @@ const sendChallengeToPlayer=async(selectedPlayer)=>{
 
 
     return(
-        <FirebaseContext.Provider value={{ storeUsersToOnlineLobby,usersInLobby }}>
+        <FirebaseContext.Provider value={{ storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer }}>
             {props.children}    
         </FirebaseContext.Provider>
     )
