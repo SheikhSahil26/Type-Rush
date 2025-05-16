@@ -6,6 +6,7 @@ import { createContext ,useContext} from 'react'
 import { useState,useEffect } from "react";
 
 import { getDatabase ,get, set , ref,onValue,remove,update } from 'firebase/database';
+import { useAuthContext } from "./AuthContext";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -25,7 +26,10 @@ const database=getDatabase(firebaseApp)
 
 const FirebaseContext=createContext(null);
 
+
+
 export const useFirebase= ()=>useContext(FirebaseContext)
+
 
 export const FirebaseContextProvider=(props)=>{
 
@@ -45,7 +49,12 @@ const storeUsersToOnlineLobby = async (username) => {
     await set(userRef, {
       username: username,
       online: true,
-      status:'free'
+      status:'free',
+      notification:{
+        challenger:"",
+        message:""
+      },
+      roomJoined:0
     });
 
     console.log("User stored successfully.");
@@ -66,6 +75,37 @@ const deleteUserFromOnlineLobby = async (username) => {
   }
 };
 
+     const {authUser}=useAuthContext()
+
+    const [incomingChallenge, setIncomingChallenge] = useState(null);
+
+    const [selectedPlayer,setSelectedPlayer]=useState(null)
+
+const selectedUserListens=(selectedPlayerUsername)=>{
+    const userNotificationRef = ref(database, `myDB/online-users/${selectedPlayerUsername}/notification`);
+    
+    const unsubscribe = onValue(userNotificationRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.challenger!=='' && data.message!=='') {
+        setIncomingChallenge(data);
+      } else {
+        setIncomingChallenge(null); // Reset if no challenge
+      }
+    });
+  
+    return () => unsubscribe();
+
+}
+
+
+
+useEffect(() => {
+  const unsubscribe = selectedUserListens(authUser.username);
+  return () => unsubscribe(); // Clean up when component unmounts
+}, [selectedPlayer]);
+
+
+
  //when one user selects other for match that user will get challenge to accept or decline
 const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
     const userRef=ref(database,`myDB/online-users/${selectedPlayerUsername}/notification`);
@@ -75,12 +115,12 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
 
       console.log(snapshot.val());
 
-    await set(userRef,{
+    await update(userRef,{
       challenger:challengerUsername,
       message:"wanna a type together"
     })
 
-    console.log("Challenge notification sent successfully.");
+    setSelectedPlayer(selectedPlayerUsername)
   } catch (error) {
     console.error("Error sending challenge notification:", error);
   }
@@ -103,8 +143,72 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
 
 
 
+   
+
+  // useEffect(() => {
+  //   const userNotificationRef = ref(database, `myDB/online-users/${authUser.username}/notification`);
+    
+  //   const unsubscribe = onValue(userNotificationRef, (snapshot) => {
+  //     const data = snapshot.val();
+  //     if (data && data.challenger && data.message) {
+  //       setIncomingChallenge(data);
+  //     } else {
+  //       setIncomingChallenge(null); // Reset if no challenge
+  //     }
+  //   });
+  
+  //   return () => unsubscribe();
+  // }, [incomingChallenge]);
+
+
+
+  const makeRoomWhenChallengeAccepted=async(player1,player2,roomId)=>{
+    const roomRef=ref(database,`myDB/challengeRoom/${roomId}`);
+
+    const player1Ref=ref(database,`myDB/online-users/${player1}`);//challengedUser
+    const player2Ref=ref(database,`myDB/online-users/${player2}`);//challenger
+
+     try {
+    const snapshot = await get(roomRef);
+
+    console.log(player1,player2)
+    await set(roomRef, {
+      player1:player1,
+      player2:player2,
+    });
+
+    console.log("room created successfully");
+
+    //challenged user ke notification ko clear kardiya
+    await update(player1Ref,{
+      notification:{
+        challenger:"",
+        message:""
+      },
+      status:"busy",
+      roomJoined:roomId,
+    })
+
+    await update(player2Ref,{
+      status:"busy",
+      roomJoined:roomId,
+    })
+
+  } catch (error) {
+    console.error("Error creating room for the match", error);
+  }
+}
+
+
+//when challenged user denies the challenge this notification will go to challenger
+const sendNotificationForDenial=async()=>{
+    
+}
+
+
+
     return(
-        <FirebaseContext.Provider value={{ storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer }}>
+        <FirebaseContext.Provider value={{ storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer,incomingChallenge,makeRoomWhenChallengeAccepted }}>
             {props.children}    
         </FirebaseContext.Provider>
     )

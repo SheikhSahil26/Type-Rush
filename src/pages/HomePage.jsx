@@ -7,6 +7,7 @@ import {Link} from 'react-router-dom'
 import CompeteScreen from '../components/CompeteScreen'
 import { useAuthContext } from '../context/AuthContext'
 import { useFirebase } from '../context/FirebaseContext'
+import useLogOut from '../hooks/useLogOut'
 
 
 function HomePage() {
@@ -215,9 +216,11 @@ const incorrectRef = useRef(0);
   // const onStartCompetition=(username,selectedPlayer)=>{
 
   // }
+  const {logout}=useLogOut()
 
-
-
+  const handleLogOut=async()=>{
+    await logout()
+  }
 
 
 
@@ -310,7 +313,7 @@ const incorrectRef = useRef(0);
       <div className="reattempt-button" onClick={handleRestart}>reattempt</div>
 
 
-          <div className="reattempt-button" onClick={handleRestart}>Logout</div>
+          <div className="reattempt-button" onClick={handleLogOut}>Logout</div>
 
 
     </>

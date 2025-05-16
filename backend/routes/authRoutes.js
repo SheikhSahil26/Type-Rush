@@ -7,5 +7,7 @@ router.post("/signup",userSignUp);
 
 router.post("/login",userLogin);
 
+router.post("/logout",userLogOut);
+
 
 module.exports=router

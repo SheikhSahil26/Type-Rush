@@ -196,3 +196,58 @@
   font-size: 0.8rem;
   color: #bdc3c7;
 }
+
+/* Add these styles to your competeScreen.css file */
+
+/* Challenge buttons styling */
+.challenge-buttons {
+  display: flex;
+  margin-left: 10px;
+}
+
+.accept-button, .decline-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 0 3px;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.accept-button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+}
+
+.decline-button {
+  background-color: #f44336; /* Red */
+  color: white;
+}
+
+.accept-button:hover, .decline-button:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.accept-button:active, .decline-button:active {
+  transform: scale(0.98);
+}
+
+/* Adjust player item to accommodate the buttons */
+.player-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+}
+
+.player-info {
+  flex-grow: 1;
+  cursor: pointer;
+}
+
+/* Make sure there's enough space for buttons */
+.online-players-list {
+  width: 100%;
+}

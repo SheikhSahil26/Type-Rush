@@ -15,9 +15,9 @@ const path=require('path');
 const connectToMongoDB=require("./db/connectToMongoDB");
 
 const app=express();
-const PORT=process.env.PORT||2000;
+const PORT=process.env.PORT||2000
 
-const cors=require("cors");
+const cors=require("cors")
 
 app.use(cors({
     origin:["http://localhost:5173","https://type-rush-three.vercel.app"],//this is frontend URL for cors 

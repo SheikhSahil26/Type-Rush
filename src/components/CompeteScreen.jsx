@@ -6,14 +6,19 @@ import { useAuthContext } from '../context/AuthContext';
 const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
   const [username, setUsername] = useState('');
   const [onlinePlayers, setOnlinePlayers] = useState([]);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState("");
   // const [showUsernamePage, setShowUsernamePage] = useState(true);
   const [error, setError] = useState('');
- 
-  
-  const {authUser}=useAuthContext()
+  const [challenger,setChallenger]=useState('');
+  const [notifyMess,setNotifyMess]=useState('')
 
-    const {storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer}=useFirebase()
+
+
+    const {authUser}=useAuthContext()
+    
+    const {storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer,incomingChallenge,makeRoomWhenChallengeAccepted}=useFirebase()
+
+    console.log(incomingChallenge)
 
     console.log(usersInLobby)
 
@@ -29,7 +34,10 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
   useEffect(() => {
     
     setOnlinePlayers(Object.values(usersInLobby))
+
     console.log(onlinePlayers)
+
+    
     
   }, [usersInLobby]);
 
@@ -44,16 +52,29 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
     setSelectedPlayer(player);  
   };
 
-  
-
-
-  const handleStartCompetition = async() => {
+  const handleSendChallenge = async() => {
     if (selectedPlayer) {
       //when one user selects other for match that user will get challenge to accept or decline
-      const res=await sendChallengeToPlayer(selectedPlayer.username,authUser.username)
-      
+      try{
+         await sendChallengeToPlayer(selectedPlayer.username,authUser.username)
+      }
+      catch(error){
+        console.log(error.message);
+      }
     }
   };
+
+  const handleAcceptChallenge=async()=>{
+      const roomId=Math.floor(Math.random() * (1000 - 1 + 1)) + 1;
+      await makeRoomWhenChallengeAccepted(authUser.username,incomingChallenge.challenger,roomId) 
+  }
+
+  const handleDeclineChallenge=async()=>{
+    
+  }
+
+
+
 
   return (
     <div className="compete-screen-overlay">
@@ -72,6 +93,7 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
             <h3>Select a player to challenge:</h3>
             <div className="online-players-list">
               {onlinePlayers.map(player => (
+                <>
                 <div
                   key={player.username}
                   onClick={() => handleSelectPlayer(player)}
@@ -92,6 +114,28 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
                     <span className="status-text">{player.status}</span>
                   </div>                                                
                 </div>
+
+               {(incomingChallenge &&  player.username===incomingChallenge.challenger)&& (
+  <div className="challenge-buttons">
+    <p>{incomingChallenge.challenger} says: {incomingChallenge.message}</p>
+    <button 
+      className="accept-button"
+      onClick={() => handleAcceptChallenge(incomingChallenge.challenger)}
+    >
+      Accept
+    </button>
+    <button 
+      className="decline-button"
+      onClick={() => handleDeclineChallenge(incomingChallenge.challenger)}
+    >
+      Decline
+    </button>
+  </div>
+)}
+
+
+
+                </>
               ))}
             </div>
            
@@ -103,11 +147,11 @@ const CompeteScreen = ({handleStartAndCloseCompeteMode,onStartCompetition}) => {
                 Back
               </button>
               <button
-                onClick={handleStartCompetition}
+                onClick={handleSendChallenge}
                 disabled={!selectedPlayer}
                 className={`start-competition-button ${selectedPlayer ? 'active' : 'disabled'}`}
               >
-                Start Competition
+                Send Challenge
               </button>
             </div>
           </div>
