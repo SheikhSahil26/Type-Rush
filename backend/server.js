@@ -15,7 +15,7 @@ const path=require('path');
 const connectToMongoDB=require("./db/connectToMongoDB");
 
 const app=express();
-const PORT=process.env.PORT||2000
+const PORT=process.env.PORT||1000
 
 const cors=require("cors")
 

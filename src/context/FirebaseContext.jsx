@@ -100,7 +100,7 @@ const selectedUserListens=(selectedPlayerUsername)=>{
 
 
 useEffect(() => {
-  const unsubscribe = selectedUserListens(authUser.username);
+  const unsubscribe = selectedUserListens(authUser?.username);
   return () => unsubscribe(); // Clean up when component unmounts
 }, [selectedPlayer]);
 
