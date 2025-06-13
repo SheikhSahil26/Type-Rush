@@ -38,9 +38,10 @@ app.use(cookieParser());   //parsing cookie
 //Routes
 
 const authRoutes=require("./routes/authRoutes");
+const userRoutes=require("./routes/userRoutes");
 
 app.use("/api/auth",authRoutes);
-
+app.use("/api/user",userRoutes);
 
 app.listen(PORT,()=>{
     connectToMongoDB();

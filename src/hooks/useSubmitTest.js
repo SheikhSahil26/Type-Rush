@@ -3,22 +3,19 @@ import toast from 'react-hot-toast'
 import { useAuthContext } from '../context/AuthContext.jsx'
 
 
-const useLogin = () => {
+const useSubmitTest = () => {
   const {setAuthUser}=useAuthContext();
   
 
   const backendUrl=import.meta.env.VITE_BACKEND_URL
 
-  const login=async({username,password})=>{
-
-    
+  const submitTestResult=async({actualWpm,totalKeyStrokes,accuracy,duration,formattedDate})=>{
 
     try{
-      
-        const res=await fetch(`${backendUrl}/api/auth/login`,{
+        const res=await fetch(`${backendUrl}/api/user/submit-test`,{
             method:"POST",
             headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({username,password}),
+            body:JSON.stringify({actualWpm,totalKeyStrokes,accuracy,duration,formattedDate}),
             credentials: "include",
         })
         console.log(res);
@@ -30,14 +27,6 @@ const useLogin = () => {
             throw new Error(data.error)
         }
 
-        data.success="";
-        
-        localStorage.setItem('player',JSON.stringify(data))
-
-        setAuthUser(data);
-
-        toast.success("loggedIn successFully")
-
 
        
 
@@ -48,7 +37,7 @@ const useLogin = () => {
    
     
   }
-  return {login}
+  return {submitTestResult}
 }
 
-export default useLogin
+export default useSubmitTest;

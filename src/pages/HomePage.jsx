@@ -2,12 +2,15 @@ import { useState } from 'react'
 
 import './home.css'
 import React, { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import TypeTestResults from '../components/TypeTestResults'
-import {Link} from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import CompeteScreen from '../components/CompeteScreen'
 import { useAuthContext } from '../context/AuthContext'
 import { useFirebase } from '../context/FirebaseContext'
 import useLogOut from '../hooks/useLogOut'
+import useSubmitTest from '../hooks/useSubmitTest'
+
 
 
 function HomePage() {
@@ -28,29 +31,26 @@ function HomePage() {
   const [restart, setRestart] = useState(false)
   const [typeAccuracy, setTypeAccuracy] = useState([]);
   const [showResults, setShowResults] = useState(false);
-  const [competeMode,setCompeteMode]=useState(false);
+  const [competeMode, setCompeteMode] = useState(false);
+  
 
 
-  const {storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby}=useFirebase()
-  
-  const {authUser}=useAuthContext()
+  const { storeUsersToOnlineLobby, usersInLobby, deleteUserFromOnlineLobby } = useFirebase()
 
-  
-  console.log(authUser)
-  
-  
+  const { authUser } = useAuthContext()
+
+  const navigate = useNavigate()
 
   const typeAccuracyRef = useRef([]);
-
   const inputRef = useRef()
   const paraRefs = useRef([]);
   const correctRef = useRef(0);
-const incorrectRef = useRef(0);
+  const incorrectRef = useRef(0);
 
-
-
-
-
+  const handleProfileClick = () => {
+    // Add your profile navigation logic here
+    navigate(`profile/${authUser.username}`)
+  };
 
   useEffect(() => {
     const getRandomWords = async () => {
@@ -86,39 +86,29 @@ const incorrectRef = useRef(0);
 
     // if (input.length > 0 && input[input.length - 1] === para[input.length - 1]) {
     //   setCorrect((prev) => prev + 1);
-      
+
     // }
     // else if (input.length > 0 && input[input.length - 1] !== para[input.length - 1]) {
     //   setIncorrect((prev) => prev + 1);
-      
+
     // }
     if (input.length > 0 && input[input.length - 1] === para[input.length - 1]) {
-  setCorrect((prev) => {
-    correctRef.current = prev + 1;
-    return prev + 1;
-  });
-} else if (input.length > 0 && input[input.length - 1] !== para[input.length - 1]) {
-  setIncorrect((prev) => {
-    incorrectRef.current = prev + 1;
-    return prev + 1;
-  });
-}
-
-
-    
-
-
-
-
-
-
-
-
+      setCorrect((prev) => {
+        correctRef.current = prev + 1;
+        return prev + 1;
+      });
+    } else if (input.length > 0 && input[input.length - 1] !== para[input.length - 1]) {
+      setIncorrect((prev) => {
+        incorrectRef.current = prev + 1;
+        return prev + 1;
+      });
+    }
   }, [input, para]);
 
 
+  
 
-  useEffect(() => { 
+  useEffect(() => {
     if (!isStarted) return;
 
     const timer = setInterval(() => {
@@ -133,9 +123,10 @@ const incorrectRef = useRef(0);
         console.log(totalTyped)
         console.log(correct, inCorrect)
         inputRef.current?.blur();
+        
 
-        if (totalTyped > 0) {
-
+        if (totalTyped > 0) { 
+          
           setAccuracy(acc);
           const durationInMinutes = (endTime - startTime) / 1000 / 60;
           console.log(durationInMinutes)
@@ -144,45 +135,36 @@ const incorrectRef = useRef(0);
           setActualWpm((correctRef.current / 5) / durationInMinutes)
           console.log(wpm)
           setRawWpm(wpm);
-          setTypeAccuracy([...typeAccuracyRef.current]); 
+          setTypeAccuracy([...typeAccuracyRef.current]);
           console.log(typeAccuracyRef.current)
         } else {
           setAccuracy(0);
         }
+
         setIsStarted(false);
-        setStartTime(endTime)
+        // setStartTime(endTime)
         clearInterval(timer);
-         setShowResults(true);
+        setShowResults(true);
       }
 
-
-
-
-
-
-    }, 1000);
+  }, 1000);
 
     return () => clearInterval(timer);
   }, [isStarted, endTime]);
 
-
-
-
-
-
   const divClickHandler = () => {
 
-  if (showResults===false) {
-    inputRef.current?.focus();
-  }
+    if (showResults === false) {
+      inputRef.current?.focus();
+    }
 
   }
 
   const handleRestart = () => {
     setRestart((prev) => !prev)
     correctRef.current = 0;        // ✅ Reset these
-  incorrectRef.current = 0;  
-    
+    incorrectRef.current = 0;
+
     setCorrect(0)
     setIncorrect(0)
 
@@ -198,123 +180,160 @@ const incorrectRef = useRef(0);
 
     setAccuracy(0)
     setRawWpm(0);
-   typeAccuracyRef.current = []
-   setShowResults(false);
+    typeAccuracyRef.current = []
+    setShowResults(false);
 
   }
 
-  const handleStartAndCloseCompeteMode=async()=>{
-    if(competeMode===true){
+  const handleStartAndCloseCompeteMode = async () => {
+    if (competeMode === true) {
       await deleteUserFromOnlineLobby(authUser.username);
     }
-    setCompeteMode((prev)=>!prev);
+    setCompeteMode((prev) => !prev);
   }
-
-
-
 
   // const onStartCompetition=(username,selectedPlayer)=>{
 
   // }
-  const {logout}=useLogOut()
-
-  const handleLogOut=async()=>{
-    await logout()
-  }
-
-
+  const { logout } = useLogOut()
 
   return (
     <>
-
-    <h1 className='web-name'>Type-Rush</h1>
-  
-      <div className="container">
-        <div className="time-card" onClick={() => setTime(Date.now() + 10000)}>10s</div>
-        <div className="time-card" onClick={() => setTime(Date.now() + 30000)}>30s</div>
-        <div className="time-card" onClick={() => setTime(Date.now() + 60000)}>60s</div>
-      </div>
-
-
-      <div onClick={divClickHandler} style={{ cursor: "text" }}>
-
-        <h2>
-          {para.split("").map((char, index) => {
-            let color = "gray";
-            if (index < input.length) {
-              color = input[index] === char ? "white" : "red";
-            }
-
-            // initialize the ref if not already
-            if (!paraRefs.current[index]) {
-              paraRefs.current[index] = React.createRef();
-            }
-
-            return (
-
-
-
-
-
-              <React.Fragment key={index}>
-                {index === input.length && isStarted && <span className="cursor"></span>}
-                <span style={{ color }} ref={paraRefs.current[index]}>
-                  {char}
-                </span>
-
-              </React.Fragment>
-
-            );
-
-          })}
-
-        </h2>
-
-
-
-
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          maxLength={para.length}
+      {/* Header with Type-Rush on left and Profile icon on right */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '20px 40px',
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+        zIndex: 1000
+      }}>
+        <h1 className='web-name' style={{
+          margin: 0,
+          fontSize: '2rem',
+          background: 'linear-gradient(to right, #f59e0b, #d97706)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          Type-Rush
+        </h1>
+        <div
+          onClick={handleProfileClick}
           style={{
-            position: "absolute",
-            opacity: 0,
-            pointerEvents: "none",
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            background: 'rgba(15, 23, 42, 0.6)',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            fontSize: '18px',
+            color: '#f8fafc'
           }}
-        />
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(30, 41, 59, 0.7)';
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(15, 23, 42, 0.6)';
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+          }}
+        >
+          👤
+        </div>
       </div>
 
-      {competeMode && (<CompeteScreen 
-      handleStartAndCloseCompeteMode={handleStartAndCloseCompeteMode}
-      
-      />
-      )}
+      {/* Add margin to push content below fixed header */}
+      <div style={{ marginTop: '100px' }}>
 
-   
-
-      {showResults && (
-  <TypeTestResults
-    accuracy={accuracy}
-    raw={rawWpm}
-    actualWpm={actualWpm}
-    correct={correctRef.current}
-    incorrect={incorrectRef.current}
-    totalKeystrokes={input.length}
-    duration={(endTime - startTime) / 1000}
-    wpmHistory={typeAccuracyRef.current} 
-    typeAccuracyHistory={typeAccuracyRef.current}
-  />
-)}
-
-      <div className="reattempt-button" onClick={(handleStartAndCloseCompeteMode)}>Compete with others</div>
-
-      <div className="reattempt-button" onClick={handleRestart}>reattempt</div>
+        <div className="container">
+          <div className="time-card" onClick={() => setTime(Date.now() + 10000)}>10s</div>
+          <div className="time-card" onClick={() => setTime(Date.now() + 30000)}>30s</div>
+          <div className="time-card" onClick={() => setTime(Date.now() + 60000)}>60s</div>
+        </div>
 
 
-          <div className="reattempt-button" onClick={handleLogOut}>Logout</div>
+        <div onClick={divClickHandler} style={{ cursor: "text" }}>
 
+          <h2>
+            {para.split("").map((char, index) => {
+              let color = "gray";
+              if (index < input.length) {
+                color = input[index] === char ? "white" : "red";
+              }
+
+              // initialize the ref if not already
+              if (!paraRefs.current[index]) {
+                paraRefs.current[index] = React.createRef();
+              }
+
+              return (
+                <React.Fragment key={index}>
+                  {index === input.length && isStarted && <span className="cursor"></span>}
+                  <span style={{ color }} ref={paraRefs.current[index]}>
+                    {char}
+                  </span>
+
+                </React.Fragment>
+
+              );
+
+            })}
+
+          </h2>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            maxLength={para.length}
+            style={{
+              position: "absolute",
+              opacity: 0,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+
+        {competeMode && (<CompeteScreen
+          handleStartAndCloseCompeteMode={handleStartAndCloseCompeteMode}
+
+        />
+        )}
+        {showResults && (
+          <TypeTestResults
+            accuracy={accuracy}
+            raw={rawWpm}
+            actualWpm={actualWpm}
+            correct={correctRef.current}
+            incorrect={incorrectRef.current}
+            totalKeyStrokes={correct+inCorrect}
+            duration={(endTime - startTime) / 1000}
+            wpmHistory={typeAccuracyRef.current}
+            typeAccuracyHistory={typeAccuracyRef.current}
+            
+          />
+        )}
+
+        <div className="reattempt-button" onClick={(handleStartAndCloseCompeteMode)}>Compete with others</div>
+
+        <div className="reattempt-button" onClick={handleRestart}>reattempt</div>
+
+
+        <div className="reattempt-button" onClick={logout}>Logout</div>
+
+      </div>
 
     </>
   )

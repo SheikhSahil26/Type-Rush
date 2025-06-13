@@ -1,7 +1,8 @@
 import React from 'react';
 import './analytics.css';
 import TimeVsAccuracyChart from './TimeVsAccuracyChart';
-
+import useSubmitTest from '../hooks/useSubmitTest';
+import { useEffect } from 'react';
 
 const TypeTestResults = ({
   accuracy,
@@ -9,12 +10,22 @@ const TypeTestResults = ({
   actualWpm,
   correct,
   incorrect,
-  totalKeystrokes,
+  totalKeyStrokes,
   duration,
   wpmHistory,
-  typeAccuracyHistory
+  typeAccuracyHistory, 
 }) => {
-  const wpm = Math.round((totalKeystrokes / 5) / (duration / 60));
+  const wpm = Math.round((totalKeyStrokes / 5) / (duration / 60));
+  const now=new Date()
+  const formattedDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+
+  //calling submit test hook
+    const {submitTestResult}=useSubmitTest();
+
+    useEffect(()=>{
+      console.log(totalKeyStrokes)
+      submitTestResult({actualWpm,totalKeyStrokes,accuracy,duration,formattedDate});
+    },[])
 
   return (
     <div className="type-test-container">
@@ -27,7 +38,7 @@ const TypeTestResults = ({
       <div className="details-box">
         <div className="details-title">Keystrokes</div>
         <div className="keystrokes">
-          <div className="keystroke-row"><div className="keystroke-label">Characters</div><div className="keystroke-value">{totalKeystrokes}</div></div>
+          <div className="keystroke-row"><div className="keystroke-label">Characters</div><div className="keystroke-value">{totalKeyStrokes}</div></div>
           <div className="keystroke-row"><div className="keystroke-label">Correct</div><div className="keystroke-value">{correct}</div></div>
           <div className="keystroke-row"><div className="keystroke-label">Incorrect</div><div className="keystroke-value">{incorrect}</div></div>
         </div>

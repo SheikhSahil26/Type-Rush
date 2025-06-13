@@ -1,5 +1,6 @@
 import React from 'react'
 import { useAuthContext } from '../context/AuthContext'
+import toast from 'react-hot-toast'
 
 const useLogOut = () => {
 
@@ -25,7 +26,7 @@ const useLogOut = () => {
 
             setAuthUser(null);
 
-
+            toast.success("loggedOut successfully")
         }
         catch(error){
             console.log(error)

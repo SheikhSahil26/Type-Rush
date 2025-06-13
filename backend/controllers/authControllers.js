@@ -17,7 +17,8 @@ async function userSignUp(req,res){
 
         const newUser=new User({ 
             username,
-            password,  
+            password,
+            
         })
 
         if(newUser){
@@ -26,11 +27,15 @@ async function userSignUp(req,res){
 
             console.log("new user created");
 
+            const populatedUser = await User.findById(newUser._id).populate("stats");
+
+            console.log(populatedUser);
+
             generateTokenAndSetCookie(newUser._id,res)
 
             return res.status(200).json({
-                _id: newUser._id,
-                username: newUser.username,
+                _id: populatedUser._id,
+                username: populatedUser.username,
 
             })
 

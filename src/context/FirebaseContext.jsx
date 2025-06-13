@@ -4,9 +4,13 @@ import { initializeApp } from "firebase/app";
 // https://firebase.google.com/docs/web/setup#available-libraries
 import { createContext ,useContext} from 'react'
 import { useState,useEffect } from "react";
+import toast from "react-hot-toast";
 
 import { getDatabase ,get, set , ref,onValue,remove,update } from 'firebase/database';
 import { useAuthContext } from "./AuthContext";
+import { useNavigate } from "react-router-dom";
+
+
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -28,10 +32,12 @@ const FirebaseContext=createContext(null);
 
 
 
-export const useFirebase= ()=>useContext(FirebaseContext)
+export const useFirebase=()=>useContext(FirebaseContext)
 
 
 export const FirebaseContextProvider=(props)=>{
+
+  const navigate=useNavigate()
 
 //means the user has entered the compete mode !!!!
 const storeUsersToOnlineLobby = async (username) => {
@@ -63,6 +69,7 @@ const storeUsersToOnlineLobby = async (username) => {
     console.error("Error checking username:", error);
   }
 };
+
 //delete user or in game terms remove players from realtime db  !!! user exited compete mode!!!
 const deleteUserFromOnlineLobby = async (username) => {
   const userRef = ref(database, `myDB/online-users/${username}`);
@@ -81,7 +88,7 @@ const deleteUserFromOnlineLobby = async (username) => {
 
     const [selectedPlayer,setSelectedPlayer]=useState(null)
 
-const selectedUserListens=(selectedPlayerUsername)=>{
+const selectedUserListens=(selectedPlayerUsername)=>{ 
     const userNotificationRef = ref(database, `myDB/online-users/${selectedPlayerUsername}/notification`);
     
     const unsubscribe = onValue(userNotificationRef, (snapshot) => {
@@ -102,13 +109,17 @@ const selectedUserListens=(selectedPlayerUsername)=>{
 useEffect(() => {
   const unsubscribe = selectedUserListens(authUser?.username);
   return () => unsubscribe(); // Clean up when component unmounts
-}, [selectedPlayer]);
+}, [authUser?.username]);
 
 
 
  //when one user selects other for match that user will get challenge to accept or decline
 const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
     const userRef=ref(database,`myDB/online-users/${selectedPlayerUsername}/notification`);
+
+    if(selectedPlayerUsername===challengerUsername){
+      return "you cant challenge yourself";
+    }
 
     try {
       const snapshot = await get(userRef);
@@ -121,24 +132,36 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
     })
 
     setSelectedPlayer(selectedPlayerUsername)
+
+    toast.success("challenge send successfully")
+    
   } catch (error) {
+    toast.error("error sending challenge notification")
     console.error("Error sending challenge notification:", error);
   }
 }
 
 
-     const [usersInLobby, setusersInLobby] = useState({});
+
+
+//whenever the compete page loads this useEffect runs and the current online players in db is listed!!!!
+     const [usersInLobby, setUsersInLobby] = useState({});
+     const [loadingUsers, setLoadingUsers] = useState(true);
 
   useEffect(() => {
     const usersInLobbyRef = ref(database, 'myDB/online-users/');
 
     const unsubscribe = onValue(usersInLobbyRef, (snapshot) => {
       const data = snapshot.val();
-      setusersInLobby(data || {});
+      setUsersInLobby(data || {});
       console.log(data)
+       setLoadingUsers(false);  
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      setLoadingUsers(false);
+    }
   }, []);
 
 
@@ -183,12 +206,13 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
     await update(player1Ref,{
       notification:{
         challenger:"",
-        message:""
+        message:"",
       },
       status:"busy",
       roomJoined:roomId,
     })
 
+    //challenger ke status ko busy and roomJoined mai roomId
     await update(player2Ref,{
       status:"busy",
       roomJoined:roomId,
@@ -199,16 +223,70 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
   }
 }
 
+// this is for the challenger bcoz when challenge is accepted then the challenger should also listen to the room joined of his/her db so if there is roomId then challenger must go to that room
+
+  useEffect(() => {
+    
+  const challengerRoomRef = ref(database, `myDB/online-users/${authUser?.username}/roomJoined`);
+
+  const unsubscribe = onValue(challengerRoomRef, (snapshot) => {
+    const roomId = snapshot.val();
+    console.log(roomId)
+    if (roomId) {
+      navigate(`/compete/${roomId}`);
+    }
+  });
+
+  return () => unsubscribe();
+}, [authUser?.username]);
+
+
+// useEffect(() => {
+//   const userRef = ref(database, `myDB/online-users/${authUser.username}`);
+
+//   const clearRoomOnLeave = async () => {
+//     // Clear roomJoined when user leaves or reloads
+//     await update(userRef, {
+//       roomJoined: 0,
+//       status: "online" // Set status back to online
+//     });
+//   };
+
+//   // On component unmount or back navigation
+//   return () => {
+//     clearRoomOnLeave();
+//   };
+// }, []);
+
 
 //when challenged user denies the challenge this notification will go to challenger
-const sendNotificationForDenial=async()=>{
-    
+const sendNotificationForDenial=async(challengerUsername)=>{
+    const challengerNotificationRef=ref(database,`myDB/online-users/${challengerUsername}/notification`);
+    const clearSelectedPlayerNotifyRef=ref(database,`myDB/online-users/`)
+
+    try{
+      await update(challengerNotificationRef,{
+        message:"i cant play right now",
+      })
+
+      
+
+    }
+    catch(error){
+      console.log(error);
+      toast.error("something unusual happened during denial")
+    }
+
+
+
+
+
 }
 
 
 
     return(
-        <FirebaseContext.Provider value={{ storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer,incomingChallenge,makeRoomWhenChallengeAccepted }}>
+        <FirebaseContext.Provider value={{ storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer,incomingChallenge,makeRoomWhenChallengeAccepted,loadingUsers }}>
             {props.children}    
         </FirebaseContext.Provider>
     )
