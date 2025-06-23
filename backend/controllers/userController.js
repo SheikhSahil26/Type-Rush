@@ -57,8 +57,8 @@ async function submitTest(req, res) {
         const dateObj = new Date(year, month - 1, day);
 
         stats.testHistory.push({
-            wpm: actualWpm,
-            accuracy: accuracy,
+            wpm: actualWpm.toFixed(1),
+            accuracy: accuracy.toFixed(1),
             duration: duration,
             wordsTyped: totalKeyStrokes,
             testDate: formattedDate  
@@ -80,7 +80,7 @@ async function submitTest(req, res) {
 
 
 
-        if (!yesterdayStreak) stats.currentStreak = 0;
+        if (!yesterdayStreak) stats.currentStreak = 1;
 
         else {
             if (!stats.streakList.get(formattedDate)) {

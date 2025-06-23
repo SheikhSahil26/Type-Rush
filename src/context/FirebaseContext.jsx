@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-import { createContext ,useContext} from 'react'
+import { createContext ,useContext} from 'react';
 import { useState,useEffect } from "react";
 import toast from "react-hot-toast";
 
@@ -33,6 +33,8 @@ const FirebaseContext=createContext(null);
 
 
 export const useFirebase=()=>useContext(FirebaseContext)
+
+export { database as db }; // 🔥 ADD THIS
 
 
 export const FirebaseContextProvider=(props)=>{
@@ -152,7 +154,7 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
     const usersInLobbyRef = ref(database, 'myDB/online-users/');
 
     const unsubscribe = onValue(usersInLobbyRef, (snapshot) => {
-      const data = snapshot.val();
+      const data = snapshot.val(); 
       setUsersInLobby(data || {});
       console.log(data)
        setLoadingUsers(false);  

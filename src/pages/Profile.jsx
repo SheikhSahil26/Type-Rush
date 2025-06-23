@@ -181,7 +181,7 @@ const renderStreakCalendar = () => {
         <div className="stat-card">
           <div className="stat-icon">🏆</div>
           <div className="stat-content">
-            <div className="stat-value">{userData?.stats?.bestWpm}</div>
+            <div className="stat-value">{userData?.stats?.bestWpm.toFixed(1)}</div>
             <div className="stat-label">Best WPM</div>
           </div>
         </div>
@@ -189,7 +189,7 @@ const renderStreakCalendar = () => {
         <div className="stat-card">
           <div className="stat-icon">🎯</div>
           <div className="stat-content">
-            <div className="stat-value">{userData?.stats?.bestAccuracy}%</div>
+            <div className="stat-value">{userData?.stats?.bestAccuracy.toFixed(1)}%</div>
             <div className="stat-label">Best Accuracy</div>
           </div>
         </div>

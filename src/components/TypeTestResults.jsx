@@ -12,7 +12,7 @@ const TypeTestResults = ({
   incorrect,
   totalKeyStrokes,
   duration,
-  wpmHistory,
+  // wpmHistory,
   typeAccuracyHistory, 
 }) => {
   const wpm = Math.round((totalKeyStrokes / 5) / (duration / 60));

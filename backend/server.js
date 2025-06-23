@@ -15,12 +15,12 @@ const path=require('path');
 const connectToMongoDB=require("./db/connectToMongoDB");
 
 const app=express();
-const PORT=process.env.PORT||1000
+const PORT=process.env.PORT || 1000
 
 const cors=require("cors")
 
 app.use(cors({
-    origin:["http://localhost:5173","https://type-rush-three.vercel.app"],//this is frontend URL for cors 
+    origin:["http://localhost:5174","https://type-rush-three.vercel.app"],//this is frontend URL for cors 
     methods:['GET','POST','DELETE','PUT'],
     credentials:true,
 }))
@@ -39,9 +39,11 @@ app.use(cookieParser());   //parsing cookie
 
 const authRoutes=require("./routes/authRoutes");
 const userRoutes=require("./routes/userRoutes");
+const roomRoutes=require("./routes/roomRoutes");
 
 app.use("/api/auth",authRoutes);
 app.use("/api/user",userRoutes);
+app.use("/api/room",roomRoutes);
 
 app.listen(PORT,()=>{
     connectToMongoDB();

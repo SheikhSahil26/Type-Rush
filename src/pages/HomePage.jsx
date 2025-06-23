@@ -10,6 +10,7 @@ import { useAuthContext } from '../context/AuthContext'
 import { useFirebase } from '../context/FirebaseContext'
 import useLogOut from '../hooks/useLogOut'
 import useSubmitTest from '../hooks/useSubmitTest'
+import useStoreUsersInLobby from '../hooks/useStoreUsersInLobby'
 
 
 
@@ -33,7 +34,7 @@ function HomePage() {
   const [showResults, setShowResults] = useState(false);
   const [competeMode, setCompeteMode] = useState(false);
   
-
+  const {storeUsersInLobby}=useStoreUsersInLobby()
 
   const { storeUsersToOnlineLobby, usersInLobby, deleteUserFromOnlineLobby } = useFirebase()
 
@@ -258,6 +259,8 @@ function HomePage() {
       {/* Add margin to push content below fixed header */}
       <div style={{ marginTop: '100px' }}>
 
+        <h4>click on the para to start typing....</h4>
+
         <div className="container">
           <div className="time-card" onClick={() => setTime(Date.now() + 10000)}>10s</div>
           <div className="time-card" onClick={() => setTime(Date.now() + 30000)}>30s</div>
@@ -320,7 +323,7 @@ function HomePage() {
             incorrect={incorrectRef.current}
             totalKeyStrokes={correct+inCorrect}
             duration={(endTime - startTime) / 1000}
-            wpmHistory={typeAccuracyRef.current}
+            // wpmHistory={typeAccuracyRef.current}
             typeAccuracyHistory={typeAccuracyRef.current}
             
           />
