@@ -148,7 +148,7 @@ console.log(onlinePlayers)
 
 
   return  loadingUsers ? (
-    <GamingLoadingState />
+    <GameLoadingState />
   ) :(
     <div className="compete-screen-overlay">
       <div className="compete-screen-container">
