@@ -173,7 +173,7 @@ const renderStreakCalendar = () => {
         <div className="stat-card">
           <div className="stat-icon">⚡</div>
           <div className="stat-content">
-            <div className="stat-value">{userStats.averageWpm}</div>
+            <div className="stat-value">{userStats.averageWpm.toFixed(1)}</div>
             <div className="stat-label">Average WPM</div>
           </div>
         </div>
