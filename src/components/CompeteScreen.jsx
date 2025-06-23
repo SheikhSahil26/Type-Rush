@@ -38,7 +38,9 @@ const CompeteScreen = ({ handleStartAndCloseCompeteMode, onStartCompetition }) =
   useEffect(() => {
     const backendUrl=import.meta.env.VITE_BACKEND_URL
 
-    const storeUsersToOnlineLobby=async(username)=>{
+try{
+  
+const storeUsersToOnlineLobby=async(username)=>{
       console.log(username)
       const res=await fetch(`${backendUrl}/api/room/store-users-in-lobby`,{
         method:"POST",
@@ -58,9 +60,17 @@ const CompeteScreen = ({ handleStartAndCloseCompeteMode, onStartCompetition }) =
     const timeoutId = setTimeout(() => {
       storeUsersToOnlineLobby(authUser.username);
     }, 3000);
-  
-    // Cleanup the timeout if the component unmounts early
+      // Cleanup the timeout if the component unmounts early
     return () => clearTimeout(timeoutId);
+}catch(error){
+  toast.error(error.message);
+}
+    
+
+    
+  
+  
+    
 
   }, [authUser])
 
