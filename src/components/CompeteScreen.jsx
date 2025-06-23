@@ -9,7 +9,7 @@ import useLobbyUsers from '../hooks/useLobbyUsers';
 import useSendChallenge from '../hooks/useSendChallenge';
 import { getDatabase ,get, set , ref,onValue,remove,update } from 'firebase/database';
 import { db } from "../context/FirebaseContext";
-import GamingLoadingState from './GameLoadingState';
+import GameLoadingState from './GameLoadingState';
 import useDenyChallenge from '../hooks/useDenyChallenge';
 
 

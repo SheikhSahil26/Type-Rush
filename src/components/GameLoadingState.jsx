@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Zap, Users, Gamepad2, Target, Trophy, Sword, Shield } from 'lucide-react';
 import './competeScreen.css'; // Make sure this includes the styles I gave earlier
 
-const GamingLoadingState = () => {
+const GameLoadingState = () => {
   const [currentMessage, setCurrentMessage] = useState(0);
   const [dots, setDots] = useState('');
   const [pulseScale, setPulseScale] = useState(1);
@@ -108,4 +108,4 @@ const GamingLoadingState = () => {
   );
 };
 
-export default GamingLoadingState;
+export default GameLoadingState;
