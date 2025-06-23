@@ -57,8 +57,8 @@ const storeUsersToOnlineLobby=async(username)=>{
       // setOnlinePlayers(data.usersInLobby || [])
     }
 
-    const timeoutId = setTimeout(() => {
-      storeUsersToOnlineLobby(authUser.username);
+    const timeoutId = setTimeout(async() => {
+      await storeUsersToOnlineLobby(authUser.username);
     }, 3000);
       // Cleanup the timeout if the component unmounts early
     return () => clearTimeout(timeoutId);
