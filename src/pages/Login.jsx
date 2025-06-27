@@ -3,33 +3,30 @@ import './login.css';
 import useLogin from '../hooks/useLogin';
 import { Link } from 'react-router-dom';
 
-
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-    const {login}=useLogin()
-  const handleSubmit =async (e) => {
-    e.preventDefault();
 
-    console.log(username,password)
+  const { login, loading } = useLogin();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    console.log(username, password);
     
     // Basic validation
     if (!username || !password) {
       setError('Please fill in all fields');
       return;
     }
-    if(username.length<3)setError("username length must be greater than 3")
-
-
+    if (username.length < 3) {
+      setError("Username length must be greater than 3");
+      return;
+    }
+    
     setError("");
-
-    await login({username,password});
-
-    
-    
-
-
+    await login({ username, password });
   };
 
   return (
@@ -49,6 +46,7 @@ const Login = () => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
               required
+              disabled={loading}
             />
           </div>
 
@@ -61,34 +59,66 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
+              disabled={loading}
             />
           </div>
 
           {error && <p className="error-message">{error}</p>}
 
-          <button type="submit" className="submit-button">
-            Login
+          <button type="submit" className={`submit-button ${loading ? 'loading' : ''}`} disabled={loading}>
+            {loading ? (
+              <>
+                <div className="loading-spinner">
+                  <div className="spinner-ring"></div>
+                  <div className="spinner-ring"></div>
+                  <div className="spinner-ring"></div>
+                </div>
+                <span className="loading-text">Connecting...</span>
+              </>
+            ) : (
+              'Login'
+            )}
           </button>
 
           <div className="auth-switch">
-            <p>Don't have an account? 
+            <p>Don't have an account?
               <Link to={'/signup'}>
-              <button 
-                type="button" 
-                className="switch-button"
-              >
-                Sign Up
-              </button>
-              
+                <button
+                  type="button"
+                  className="switch-button"
+                  disabled={loading}
+                >
+                  Sign Up
+                </button>
               </Link>
-              
             </p>
           </div>
 
           <div className="forgot-password">
-            <a href="#" className="forgot-password-link">Forgot Password?</a>
+            <a href="#" className={`forgot-password-link ${loading ? 'disabled' : ''}`}>
+              Forgot Password?
+            </a>
           </div>
         </form>
+
+        {/* Gaming-style loading overlay */}
+        {loading && (
+          <div className="gaming-loading-overlay">
+            <div className="loading-container">
+              <div className="pixel-loading">
+                <div className="pixel-bar">
+                  <div className="pixel-progress"></div>
+                </div>
+                <div className="loading-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <p className="loading-message">Authenticating Player...</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
