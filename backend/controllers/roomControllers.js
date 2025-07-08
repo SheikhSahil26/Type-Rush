@@ -1,7 +1,7 @@
 const express = require('express');
 const database = require('../utils/firebaseConfig');
 const router = express.Router();
-const { get, ref, set, update,remove } = require("firebase/database");
+const { get, ref, set, update,remove } = require("firebase-admin/database");
 const paragraphs = require('../utils/paragraphs.json');
 
 //means the user has entered the compete mode !!!!
