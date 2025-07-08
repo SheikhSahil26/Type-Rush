@@ -42,106 +42,106 @@ export const FirebaseContextProvider=(props)=>{
   const navigate=useNavigate()
 
 //means the user has entered the compete mode !!!!
-const storeUsersToOnlineLobby = async (username) => {
-  const userRef = ref(database, `myDB/online-users/${username}`);
+// const storeUsersToOnlineLobby = async (username) => {
+//   const userRef = ref(database, `myDB/online-users/${username}`);
 
-  try {
-    const snapshot = await get(userRef);
+//   try {
+//     const snapshot = await get(userRef);
 
-    if (snapshot.exists()) {
+//     if (snapshot.exists()) {
       
-      return "username already exist";
-    }
+//       return "username already exist";
+//     }
 
-    // Username doesn't exist, safe to store
-    await set(userRef, {
-      username: username,
-      online: true,
-      status:'free',
-      notification:{
-        challenger:"",
-        message:""
-      },
-      roomJoined:0
-    });
+//     // Username doesn't exist, safe to store
+//     await set(userRef, {
+//       username: username,
+//       online: true,
+//       status:'free',
+//       notification:{
+//         challenger:"",
+//         message:""
+//       },
+//       roomJoined:0
+//     });
 
-    console.log("User stored successfully.");
+//     console.log("User stored successfully.");
 
-  } catch (error) {
-    console.error("Error checking username:", error);
-  }
-};
+//   } catch (error) {
+//     console.error("Error checking username:", error);
+//   }
+// };
 
-//delete user or in game terms remove players from realtime db  !!! user exited compete mode!!!
-const deleteUserFromOnlineLobby = async (username) => {
-  const userRef = ref(database, `myDB/online-users/${username}`);
+// //delete user or in game terms remove players from realtime db  !!! user exited compete mode!!!
+// const deleteUserFromOnlineLobby = async (username) => {
+//   const userRef = ref(database, `myDB/online-users/${username}`);
 
-  try {
-    await remove(userRef);
-    console.log(`User '${username}' deleted successfully.`);
-  } catch (error) {
-    console.error("Error deleting user:", error);
-  }
-};
+//   try {
+//     await remove(userRef);
+//     console.log(`User '${username}' deleted successfully.`);
+//   } catch (error) {
+//     console.error("Error deleting user:", error);
+//   }
+// };
 
-     const {authUser}=useAuthContext()
+//      const {authUser}=useAuthContext()
 
-    const [incomingChallenge, setIncomingChallenge] = useState(null);
+//     const [incomingChallenge, setIncomingChallenge] = useState(null);
 
-    const [selectedPlayer,setSelectedPlayer]=useState(null)
+//     const [selectedPlayer,setSelectedPlayer]=useState(null)
 
-const selectedUserListens=(selectedPlayerUsername)=>{ 
-    const userNotificationRef = ref(database, `myDB/online-users/${selectedPlayerUsername}/notification`);
+// const selectedUserListens=(selectedPlayerUsername)=>{ 
+//     const userNotificationRef = ref(database, `myDB/online-users/${selectedPlayerUsername}/notification`);
     
-    const unsubscribe = onValue(userNotificationRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && data.challenger!=='' && data.message!=='') {
-        setIncomingChallenge(data);
-      } else {
-        setIncomingChallenge(null); // Reset if no challenge
-      }
-    });
+//     const unsubscribe = onValue(userNotificationRef, (snapshot) => {
+//       const data = snapshot.val();
+//       if (data && data.challenger!=='' && data.message!=='') {
+//         setIncomingChallenge(data);
+//       } else {
+//         setIncomingChallenge(null); // Reset if no challenge
+//       }
+//     });
   
-    return () => unsubscribe();
+//     return () => unsubscribe();
 
-}
-
-
-
-useEffect(() => {
-  const unsubscribe = selectedUserListens(authUser?.username);
-  return () => unsubscribe(); // Clean up when component unmounts
-}, [authUser?.username]);
+// }
 
 
 
- //when one user selects other for match that user will get challenge to accept or decline
-const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
-    const userRef=ref(database,`myDB/online-users/${selectedPlayerUsername}/notification`);
+// useEffect(() => {
+//   const unsubscribe = selectedUserListens(authUser?.username);
+//   return () => unsubscribe(); // Clean up when component unmounts
+// }, [authUser?.username]);
 
-    if(selectedPlayerUsername===challengerUsername){
-      return "you cant challenge yourself";
-    }
 
-    try {
-      const snapshot = await get(userRef);
 
-      console.log(snapshot.val());
+//  //when one user selects other for match that user will get challenge to accept or decline
+// const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
+//     const userRef=ref(database,`myDB/online-users/${selectedPlayerUsername}/notification`);
 
-    await update(userRef,{
-      challenger:challengerUsername,
-      message:"wanna a type together"
-    })
+//     if(selectedPlayerUsername===challengerUsername){
+//       return "you cant challenge yourself";
+//     }
 
-    setSelectedPlayer(selectedPlayerUsername)
+//     try {
+//       const snapshot = await get(userRef);
 
-    toast.success("challenge send successfully")
+//       console.log(snapshot.val());
+
+//     await update(userRef,{
+//       challenger:challengerUsername,
+//       message:"wanna a type together"
+//     })
+
+//     setSelectedPlayer(selectedPlayerUsername)
+
+//     toast.success("challenge send successfully")
     
-  } catch (error) {
-    toast.error("error sending challenge notification")
-    console.error("Error sending challenge notification:", error);
-  }
-}
+//   } catch (error) {
+//     toast.error("error sending challenge notification")
+//     console.error("Error sending challenge notification:", error);
+//   }
+// }
 
 
 
@@ -150,21 +150,21 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
      const [usersInLobby, setUsersInLobby] = useState({});
      const [loadingUsers, setLoadingUsers] = useState(true);
 
-  useEffect(() => {
-    const usersInLobbyRef = ref(database, 'myDB/online-users/');
+  // useEffect(() => {
+  //   const usersInLobbyRef = ref(database, 'myDB/online-users/');
 
-    const unsubscribe = onValue(usersInLobbyRef, (snapshot) => {
-      const data = snapshot.val(); 
-      setUsersInLobby(data || {});
-      console.log(data)
-       setLoadingUsers(false);  
-    });
+  //   const unsubscribe = onValue(usersInLobbyRef, (snapshot) => {
+  //     const data = snapshot.val(); 
+  //     setUsersInLobby(data || {});
+  //     console.log(data)
+  //      setLoadingUsers(false);  
+  //   });
 
-    return () => {
-      unsubscribe();
-      setLoadingUsers(false);
-    }
-  }, []);
+  //   return () => {
+  //     unsubscribe();
+  //     setLoadingUsers(false);
+  //   }
+  // }, []);
 
 
 
@@ -187,60 +187,60 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
 
 
 
-  const makeRoomWhenChallengeAccepted=async(player1,player2,roomId)=>{
-    const roomRef=ref(database,`myDB/challengeRoom/${roomId}`);
+//   const makeRoomWhenChallengeAccepted=async(player1,player2,roomId)=>{
+//     const roomRef=ref(database,`myDB/challengeRoom/${roomId}`);
 
-    const player1Ref=ref(database,`myDB/online-users/${player1}`);//challengedUser
-    const player2Ref=ref(database,`myDB/online-users/${player2}`);//challenger
+//     const player1Ref=ref(database,`myDB/online-users/${player1}`);//challengedUser
+//     const player2Ref=ref(database,`myDB/online-users/${player2}`);//challenger
 
-     try {
-    const snapshot = await get(roomRef);
+//      try {
+//     const snapshot = await get(roomRef);
 
-    console.log(player1,player2)
-    await set(roomRef, {
-      player1:player1,
-      player2:player2,
-    });
+//     console.log(player1,player2)
+//     await set(roomRef, {
+//       player1:player1,
+//       player2:player2,
+//     });
 
-    console.log("room created successfully");
+//     console.log("room created successfully");
 
-    //challenged user ke notification ko clear kardiya
-    await update(player1Ref,{
-      notification:{
-        challenger:"",
-        message:"",
-      },
-      status:"busy",
-      roomJoined:roomId,
-    })
+//     //challenged user ke notification ko clear kardiya
+//     await update(player1Ref,{
+//       notification:{
+//         challenger:"",
+//         message:"",
+//       },
+//       status:"busy",
+//       roomJoined:roomId,
+//     })
 
-    //challenger ke status ko busy and roomJoined mai roomId
-    await update(player2Ref,{
-      status:"busy",
-      roomJoined:roomId,
-    })
+//     //challenger ke status ko busy and roomJoined mai roomId
+//     await update(player2Ref,{
+//       status:"busy",
+//       roomJoined:roomId,
+//     })
 
-  } catch (error) {
-    console.error("Error creating room for the match", error);
-  }
-}
+//   } catch (error) {
+//     console.error("Error creating room for the match", error);
+//   }
+// }
 
 // this is for the challenger bcoz when challenge is accepted then the challenger should also listen to the room joined of his/her db so if there is roomId then challenger must go to that room
 
-  useEffect(() => {
+//   useEffect(() => {
     
-  const challengerRoomRef = ref(database, `myDB/online-users/${authUser?.username}/roomJoined`);
+//   const challengerRoomRef = ref(database, `myDB/online-users/${authUser?.username}/roomJoined`);
 
-  const unsubscribe = onValue(challengerRoomRef, (snapshot) => {
-    const roomId = snapshot.val();
-    console.log(roomId)
-    if (roomId) {
-      navigate(`/compete/${roomId}`);
-    }
-  });
+//   const unsubscribe = onValue(challengerRoomRef, (snapshot) => {
+//     const roomId = snapshot.val();
+//     console.log(roomId)
+//     if (roomId) {
+//       navigate(`/compete/${roomId}`);
+//     }
+//   });
 
-  return () => unsubscribe();
-}, [authUser?.username]);
+//   return () => unsubscribe();
+// }, [authUser?.username]);
 
 
 // useEffect(() => {
@@ -262,33 +262,33 @@ const sendChallengeToPlayer=async(selectedPlayerUsername,challengerUsername)=>{
 
 
 //when challenged user denies the challenge this notification will go to challenger
-const sendNotificationForDenial=async(challengerUsername)=>{
-    const challengerNotificationRef=ref(database,`myDB/online-users/${challengerUsername}/notification`);
-    const clearSelectedPlayerNotifyRef=ref(database,`myDB/online-users/`)
+// const sendNotificationForDenial=async(challengerUsername)=>{
+    // const challengerNotificationRef=ref(database,`myDB/online-users/${challengerUsername}/notification`);
+    // const clearSelectedPlayerNotifyRef=ref(database,`myDB/online-users/`)
 
-    try{
-      await update(challengerNotificationRef,{
-        message:"i cant play right now",
-      })
+    // try{
+    //   await update(challengerNotificationRef,{
+    //     message:"i cant play right now",
+    //   })
 
       
 
-    }
-    catch(error){
-      console.log(error);
-      toast.error("something unusual happened during denial")
-    }
+    // }
+    // catch(error){
+    //   console.log(error);
+    //   toast.error("something unusual happened during denial")
+    // }
 
 
 
 
 
-}
+// }
 
 
 
     return(
-        <FirebaseContext.Provider value={{ storeUsersToOnlineLobby,usersInLobby,deleteUserFromOnlineLobby,sendChallengeToPlayer,incomingChallenge,makeRoomWhenChallengeAccepted,loadingUsers }}>
+        <FirebaseContext.Provider value={{ }}>
             {props.children}    
         </FirebaseContext.Provider>
     )

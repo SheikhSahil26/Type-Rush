@@ -1,54 +1,220 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { ArrowLeft, Flag, Crown, Eye, Users, Clock, Zap, Target, Trophy } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { db } from '../context/FirebaseContext';
+import { ref, onValue,remove,onDisconnect,set, get,update } from 'firebase/database';
+import { useAuthContext } from '../context/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
+import './room.css'
+// import useRoomData from '../hooks/useRoomData'; 
 
+  
 const RoomPage = () => {
-  const [timeLeft, setTimeLeft] = useState(60);
+
+  const {authUser}=useAuthContext()
+  
+  // const [timeLeft, setTimeLeft] = useState(60);
   const [isRaceStarted, setIsRaceStarted] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(false);
+  const [paragraph, setParagraph] = useState('');
+    // const [players, setPlayers] = useState([]);
+    const [progress, setProgress] = useState(0);
+    const [status, setStatus] = useState('');
+    const [timer, setTimer] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [totalLength,setTotalLength]=useState(0);
 
-  // Mock data for demonstration
-  const [roomData] = useState({
-    roomId: "ROOM-ABC123",
-    paragraph: "The quick brown fox jumps over the lazy dog. This pangram contains every letter of the English alphabet at least once. It has been used for decades to test typewriters, keyboards, and fonts. The sentence is short, memorable, and perfect for typing practice. Many typists use this phrase to warm up their fingers before longer typing sessions.",
-    players: [
-      {
-        id: 1,
-        username: "SpeedDemon",
-        avatar: "🏆",
-        progress: 45, // percentage
-        wpm: 78,
-        accuracy: 96.5,
-        position: 1,
-        isFinished: false,
-        currentWord: 23
-      },
-      {
-        id: 2,
-        username: "TypoMaster",
-        avatar: "⚡",
-        progress: 38,
-        wpm: 65,
-        accuracy: 98.2,
-        position: 2,
-        isFinished: false,
-        currentWord: 19
+    const inputRef = useRef(null);
+
+  const {roomId}=useParams()
+ 
+
+  // const {getRoomData}=useRoomData()
+  const backendUrl=import.meta.env.VITE_BACKEND_URL
+
+  const [room,setRoom]=useState({})
+
+  const [players, setPlayers] = useState([]);
+
+ useEffect(() => {
+  if (!roomId) return;
+
+  const getRoomData = async (roomId) => {
+    try {
+      const res = await fetch(`${backendUrl}/api/room/room-data/${roomId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+      });
+      const data = await res.json();
+      const roomData = data.roomData;
+
+      setTotalLength(roomData.paragraph.length);
+
+      
+
+      setRoom(roomData);
+
+      // Dynamically build players array from progress + usernames
+      const tempPlayers = [];
+      if (roomData.player && roomData.progress?.[roomData.player]) {
+        tempPlayers.push({
+          id: 1,
+          username: roomData.player,
+          avatar: "🥷",
+          progress: 0,
+          wpm: roomData.progress[roomData.player].wpm,
+          accuracy: roomData.progress[roomData.player].accuracy,
+          position: 1,
+          isFinished: roomData.progress[roomData.player].isFinished,
+          currentWord: 0
+        });
       }
-    ],
-    spectators: [
-      { id: 1, username: "WatcherOne", avatar: "👀" },
-      { id: 2, username: "TypingFan", avatar: "🎯" },
-      { id: 3, username: "KeyboardLover", avatar: "⌨️" },
-      { id: 4, username: "SpeedWatcher", avatar: "🚀" },
-      { id: 5, username: "RaceObserver", avatar: "🏁" }
-    ]
+      if (roomData.host && roomData.progress?.[roomData.host]) {
+        tempPlayers.push({
+          id: 2,
+          username: roomData.host,
+          avatar: "🧙",
+          progress: 0,
+          wpm: roomData.progress[roomData.host].wpm,
+          accuracy: roomData.progress[roomData.host].accuracy,
+          position: 2,
+          isFinished: roomData.progress[roomData.host].isFinished,
+          currentWord: 0
+        });
+      }
+
+      setPlayers(tempPlayers);
+    
+    } catch (err) {
+      console.error("Failed to fetch room:", err);
+    }
+  };
+
+  getRoomData(roomId);
+}, [roomId]);
+
+  const [timeLeft, setTimeLeft] = useState(room?.timer?.currentTime || 60);
+useEffect(() => {
+  if (room?.timer?.currentTime) {
+    setTimeLeft(room.timer.currentTime);
+  }
+}, [room]);
+
+
+useEffect(() => {
+  const progressRef = ref(db, `myDB/challengeRoom/${roomId}/progress`);
+  const unsubscribe = onValue(progressRef, (snapshot) => {
+    const progressData = snapshot.val();
+    if (!progressData) return;
+
+    const updatedPlayers = Object.entries(progressData).map(([username, stats], i) => ({
+      id: i + 1,
+      username,
+      typed: stats.typed || 0,
+      wpm: stats.wpm || 0,
+      accuracy: stats.accuracy || 100,
+    }));
+    
+    setPlayers(updatedPlayers); // ← This triggers UI update in real-time
   });
 
-  const [players, setPlayers] = useState(roomData.players);
+  return () => unsubscribe(); // Cleanup
+}, [roomId]);
+
+
+
+  
+//   useEffect(() => {
+
+//   if (!roomId) return;
+
+//   const roomRef = ref(db, `myDB/challengeRoom/${roomId}`);
+
+//   const unsubscribe = onValue(
+//     roomRef,
+//     (snapshot) => {
+//       try {
+//         if (snapshot.exists()) {
+//           const data = snapshot.val();
+//           console.log(data)
+//           // Defensive checks in case any fields are objects
+//           setParagraph(typeof data.paragraph === 'object' ? JSON.stringify(data.paragraph) : data.paragraph || '');
+//           setProgress(typeof data.progress === 'number' ? data.progress : 0);
+//           setStatus(typeof data.status === 'string' ? data.status : '');
+//           setTimer(typeof data.timer === 'number' ? data.timer : 0);
+
+//           // Safely handle player objects
+//           const safePlayers = [data.player1, data.player2]
+//             .filter(Boolean)
+//             .map(p => typeof p === 'object' ? p.username || JSON.stringify(p) : p);
+//           setPlayers(safePlayers);
+//         } else {
+//           console.warn('No room found');
+//           toast.error("no room found")
+//         }
+//       } catch (err) {
+//         console.error('Data processing error:', err);
+//       } finally {
+//         setLoading(false);
+//       }
+//     },
+//     (error) => {
+//       console.error('Error fetching room:', error);
+//       setLoading(false);
+//     }
+//   );
+
+//   return () => unsubscribe();
+// }, [roomId]);
+
+
+  // Mock data for demonstration
+  // const [roomData] = useState({
+  //   roomId: "ROOM-ABC123",
+  //   paragraph: "The quick brown fox jumps over the lazy dog. This pangram contains every letter of the English alphabet at least once. It has been used for decades to test typewriters, keyboards, and fonts. The sentence is short, memorable, and perfect for typing practice. Many typists use this phrase to warm up their fingers before longer typing sessions.",
+  //   players: [
+  //     {
+  //       id: 1,
+  //       username: "SpeedDemon",
+  //       avatar: "🏆",
+  //       progress: 45, // percentage
+  //       wpm: 78,
+  //       accuracy: 96.5,
+  //       position: 1,
+  //       isFinished: false,
+  //       currentWord: 23
+  //     },
+  //     {
+  //       id: 2,
+  //       username: "TypoMaster",
+  //       avatar: "⚡",
+  //       progress: 38,
+  //       wpm: 65,
+  //       accuracy: 98.2,
+  //       position: 2,
+  //       isFinished: false,
+  //       currentWord: 19
+  //     }
+  //   ],
+  //   spectators: [
+  //     { id: 1, username: "WatcherOne", avatar: "👀" },
+  //     { id: 2, username: "TypingFan", avatar: "🎯" },
+  //     { id: 3, username: "KeyboardLover", avatar: "⌨️" },
+  //     { id: 4, username: "SpeedWatcher", avatar: "🚀" },
+  //     { id: 5, username: "RaceObserver", avatar: "🏁" }
+  //   ]
+  // });
+
+  // const [players, setPlayers] = useState(roomData.players);
 
   // Simulate race progress
   useEffect(() => {
     if (!isRaceStarted) return;
+
+    inputRef.current?.focus();
 
     const interval = setInterval(() => {
       setPlayers(prev => prev.map(player => ({
@@ -79,13 +245,89 @@ const RoomPage = () => {
 
   const startRace = () => {
     setShowCountdown(true);
+    
     setCountdown(3);
   };
 
-  const leaveRoom = () => {
-    // Handle room exit logic here
-    console.log("Leaving room...");
+const navigate = useNavigate();
+const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
+
+useEffect(() => {
+  if (!roomId || !authUser?.username) return;
+
+  const statusRef = ref(db, `myDB/challengeRoom/${roomId}/status`);
+  const winnerRef = ref(db, `myDB/challengeRoom/${roomId}/winner`);
+
+  const unsubscribeStatus = onValue(statusRef, (statusSnap) => {
+    const statusVal = statusSnap.val();
+    if (!statusVal) return;
+
+    onValue(winnerRef, (winnerSnap) => {
+      const winnerVal = winnerSnap.val();
+      if (winnerVal === authUser.username) {
+        // 🎉 Trigger animation
+        setShowWinnerAnimation(true);
+
+        // After delay (e.g. 5 seconds), go to analysis page
+        setTimeout(() => {
+          navigate(`/room/${roomId}/results`);
+        }, 5000);
+      }
+    }, { onlyOnce: true });
+  });
+
+  return () => {
+    unsubscribeStatus();
   };
+}, [roomId, authUser?.username, navigate]);
+
+
+
+ 
+
+
+
+// Inside your component
+
+
+const leaveRoom = async () => {
+  if (!authUser?.username || !roomId || !room) return;
+
+  console.log("Leaving room...");
+
+  const updates = {};
+  const isHost = authUser.username === room.host;
+  const isPlayer = authUser.username === room.player;
+
+  // updates[`myDB/challengeRoom/${roomId}/progress/${authUser.username}`] = null;
+  updates[`myDB/challengeRoom/${roomId}/spectators/${authUser.username}`] = null;
+  updates[`myDB/online-users/${authUser.username}/roomJoined`]=0;
+  updates[`myDB/online-users/${authUser.username}/status`]="free";
+
+  if (isHost) {
+    updates[`myDB/challengeRoom/${roomId}/host`] = null;
+    updates[`myDB/challengeRoom/${roomId}/status`] = "player-won";
+    updates[`myDB/challengeRoom/${roomId}/winner`] = room.player;
+  } else if (isPlayer) {
+    updates[`myDB/challengeRoom/${roomId}/player`] = null;
+    updates[`myDB/challengeRoom/${roomId}/status`] = "host-won";
+    updates[`myDB/challengeRoom/${roomId}/winner`] = room.host;
+  }
+
+  await update(ref(db), updates);
+
+  // ✅ Redirect to homepage after leaving
+  navigate("/");
+};
+
+
+
+
+
+
+
+
+
 
   const renderHeader = () => (
     <div style={{
@@ -138,14 +380,14 @@ const RoomPage = () => {
             color: '#e2e8f0',
             wordBreak: 'break-all'
           }}>
-            Room: {roomData.roomId}
+            <h1>Room: {roomId}</h1>
           </h1>
           <p style={{
             margin: '4px 0 0 0',
             color: '#94a3b8',
             fontSize: '14px'
           }}>
-            {players.length} players • {roomData.spectators.length} spectators
+            {players.length} players • {room?.spectators?.length} spectators
           </p>
         </div>
       </div>
@@ -176,7 +418,7 @@ const RoomPage = () => {
           </span>
         </div>
 
-        {!isRaceStarted && !showCountdown && (
+        {!isRaceStarted && !showCountdown && authUser.username===room.host && (
           <button
             onClick={startRace}
             style={{
@@ -271,7 +513,7 @@ const RoomPage = () => {
                 color: '#94a3b8',
                 fontSize: window.innerWidth < 480 ? '12px' : '14px'
               }}>
-                {player.wpm.toFixed(0)} WPM • {player.accuracy}% accuracy
+                {player.wpm?.toFixed(0)} WPM • {player.accuracy}% accuracy
               </span>
             </div>
             <span style={{
@@ -279,7 +521,7 @@ const RoomPage = () => {
               fontWeight: '700',
               fontSize: window.innerWidth < 480 ? '14px' : '16px'
             }}>
-              {player.progress.toFixed(0)}%
+              {player?.progress?.toFixed(0)}%
             </span>
           </div>
 
@@ -325,70 +567,122 @@ const RoomPage = () => {
     </div>
   );
 
-  const renderTypingArea = () => {
-    const words = roomData.paragraph.split(' ');
-    const maxProgress = Math.max(...players.map(p => p.currentWord));
+  const [typedText, setTypedText] = useState("");
 
-    return (
+
+const handleTyping = (e) => {
+  const input = e.target.value;
+  console.log(input)
+  setTypedText(input);
+
+  const words = (room?.paragraph || "").split(" ");
+  const currentWordIndex = players.find(p => p.username === authUser)?.currentWord || 0;
+  const currentWord = words[currentWordIndex] || "";
+
+  // Move to next word on space and update Firebase
+  if (input.endsWith(" ")) {
+    const cleanedInput = input.trim();
+    const isCorrect = cleanedInput === currentWord;
+
+    const progressRef = ref(db, `myDB/challengeRoom/${roomId}/progress/${authUser}`);
+    update(progressRef, {
+      currentWord: currentWordIndex + 1,
+      typed: (players.find(p => p.username === authUser)?.typed || 0) + 1,
+      accuracy: isCorrect ? 100 : 90 // dummy logic, refine as needed
+    });
+
+    setTypedText(""); // clear for next word
+  }
+};
+
+
+ const renderTypingArea = () => {
+  const words = (room?.paragraph || "").split(" ");
+  const currentPlayer = players.find(p => p.username === authUser);
+  const currentWordIndex = currentPlayer?.currentWord || 0;
+
+  return (
+    <div style={{ 
+      padding: "20px", 
+      borderRadius: "12px", 
+      background: "#1e293b",
+      marginBottom: "24px" 
+    }}>
+      <h3 style={{ color: "#f8fafc", marginBottom: "12px" }}>Typing Text</h3>
+
       <div style={{
-        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.7))',
-        borderRadius: '16px',
-        padding: window.innerWidth < 768 ? '16px' : '32px',
-        border: '1px solid rgba(148, 163, 184, 0.1)',
-        marginBottom: '24px'
+        fontFamily: "monospace",
+        fontSize: "18px",
+        lineHeight: "1.6",
+        background: "#0f172a",
+        padding: "20px",
+        borderRadius: "10px",
+        border: "1px solid #334155",
+        minHeight: "120px",
+        maxHeight: "200px",
+        overflow: "auto",
+        wordWrap: "break-word",
+        whiteSpace: "pre-wrap"
       }}>
-        <h3 style={{
-          margin: '0 0 20px 0',
-          color: '#e2e8f0',
-          fontSize: window.innerWidth < 768 ? '1rem' : '1.2rem',
-          fontWeight: '600'
-        }}>
-          Typing Text
-        </h3>
+        {words.map((word, i) => {
+          let style = { 
+            color: "#64748b", 
+            marginRight: "8px",
+            display: "inline-block"
+          };
 
-        <div style={{
-          fontSize: window.innerWidth < 768 ? '18px' : '24px',
-          lineHeight: '1.8',
-          fontFamily: 'monospace',
-          padding: window.innerWidth < 768 ? '16px' : '20px',
-          background: 'rgba(15, 23, 42, 0.5)',
-          borderRadius: '12px',
-          border: '2px solid rgba(148, 163, 184, 0.1)',
-          wordWrap: 'break-word',
-          overflowWrap: 'break-word',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          maxWidth: '100%',
-          overflow: 'hidden'
-        }}>
-          {words.map((word, index) => {
-            let color = '#64748b'; // default gray
-            
-            // Color based on players' progress
-            if (index < Math.min(...players.map(p => p.currentWord))) {
-              color = '#10b981'; // completed by all
-            } else if (index < maxProgress) {
-              color = '#f59e0b'; // in progress
-            }
+          if (i < currentWordIndex) style.color = "#10b981"; // completed
+          if (i === currentWordIndex) {
+            // Color current word with per-letter accuracy
+            const letters = word.split("").map((char, index) => {
+              let color = "#94a3b8"; // neutral
+              if (typedText[index] === char) color = "#10b981"; // correct
+              else if (typedText[index] !== undefined) color = "#ef4444"; // incorrect
+
+              return <span key={index} style={{ color }}>{char}</span>;
+            });
 
             return (
-              <span
-                key={index}
-                style={{
-                  color,
-                  marginRight: '8px',
-                  transition: 'color 0.3s ease',
-                  display: 'inline'
-                }}
-              >
-                {word}
+              <span key={i} style={style}>
+                {letters}
               </span>
             );
-          })}
-        </div>
+          }
+
+          return <span key={i} style={style}>{word}</span>;
+        })}
       </div>
-    );
-  };
+
+      {/* Hidden input to capture typing */}
+      <input
+        ref={inputRef}
+        type="text"
+        value={typedText}
+        onChange={handleTyping}
+        style={{
+          opacity: 0,
+          position: "absolute",
+          pointerEvents: "none"
+        }}
+      />
+
+      <button
+        onClick={() => inputRef.current?.focus()}
+        style={{
+          marginTop: "10px",
+          padding: "10px 20px",
+          background: "#10b981",
+          color: "#000",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer"
+        }}
+      >
+        Focus & Start Typing
+      </button>
+    </div>
+  );
+};
 
   const renderLeaderboard = () => (
     <div style={{
@@ -471,7 +765,7 @@ const RoomPage = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Zap size={14} style={{ color: '#f59e0b' }} />
-                {player.wpm.toFixed(0)} WPM
+                {/* {player.wpm.toFixed(0)} WPM */}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Target size={14} style={{ color: '#10b981' }} />
@@ -481,7 +775,7 @@ const RoomPage = () => {
                 color: '#f59e0b',
                 fontWeight: '700'
               }}>
-                {player.progress.toFixed(0)}%
+                {/* {player.progress.toFixed(0)}% */}
               </div>
             </div>
           </div>
@@ -490,6 +784,7 @@ const RoomPage = () => {
   );
 
   const renderSpectators = () => (
+    
     <div style={{
       background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.7))',
       borderRadius: '16px',
@@ -509,11 +804,11 @@ const RoomPage = () => {
           fontSize: window.innerWidth < 768 ? '1rem' : '1.2rem',
           fontWeight: '600'
         }}>
-          Spectators ({roomData.spectators.length})
+          Spectators ({room?.spectators?.length})
         </h3>
       </div>
 
-      {roomData.spectators.length === 0 ? (
+      {room?.spectators?.length === 0 ? (
         <p style={{
           color: '#94a3b8',
           margin: 0,
@@ -530,9 +825,9 @@ const RoomPage = () => {
             : 'repeat(auto-fill, minmax(200px, 1fr))',
           gap: '12px'
         }}>
-          {roomData.spectators.map((spectator) => (
+          {room?.spectators?.map((spectator) => (
             <div
-              key={spectator.id}
+              key={spectator}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -543,13 +838,13 @@ const RoomPage = () => {
                 border: '1px solid rgba(148, 163, 184, 0.1)'
               }}
             >
-              <span style={{ fontSize: '16px' }}>{spectator.avatar}</span>
+              {/* <span style={{ fontSize: '16px' }}>{spectator.avatar}</span> */}
               <span style={{
                 color: '#e2e8f0',
                 fontWeight: '500',
                 fontSize: '14px'
               }}>
-                {spectator.username}
+                {spectator}
               </span>
             </div>
           ))}
@@ -559,6 +854,17 @@ const RoomPage = () => {
   );
 
   return (
+    <>
+    
+    {showWinnerAnimation && (
+  <div className="winner-animation">
+    <h1 className="winner-text">🎉 You Won!</h1>
+    <p className="subtext">Redirecting to performance analysis...</p>
+    <div className="trophy-animation">🏆</div>
+  </div>
+)}
+
+
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
@@ -587,6 +893,7 @@ const RoomPage = () => {
 
       {showCountdown && renderCountdown()}
     </div>
+    </>
   );
 };
 

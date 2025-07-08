@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './competeScreen.css';
-import { useFirebase } from '../context/FirebaseContext';
+import { useFirebase } from '../context/FirebaseContext'; 
 import { useAuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +11,7 @@ import { getDatabase ,get, set , ref,onValue,remove,update } from 'firebase/data
 import { db } from "../context/FirebaseContext";
 import GameLoadingState from './GameLoadingState';
 import useDenyChallenge from '../hooks/useDenyChallenge';
-
+import useAcceptChallenge from '../hooks/useAcceptChallenge';
 
 
 const CompeteScreen = ({ handleStartAndCloseCompeteMode, onStartCompetition }) => {
@@ -132,17 +132,33 @@ console.log(onlinePlayers)
 
 
 
-
+  const {acceptChallenge}=useAcceptChallenge()
   //this is for the selected player when he accepts the challenge then he is sent to that roomId page
   const handleAcceptChallenge = async () => {
     const roomId = Math.floor(Math.random() * (1000 - 1 + 1)) + 1;
-    await makeRoomWhenChallengeAccepted(authUser.username, incomingChallenge.challenger, roomId)
+    await acceptChallenge(authUser.username, incomingChallenge.challenger, roomId)
 
     //go to the same room page or compete page where there is same paragraph
-    navigate(`/compete/${roomId}`)
+    // navigate(`/compete/${roomId}`)
 
 
   }
+useEffect(() => {
+  const userRoomRef = ref(db, `myDB/online-users/${authUser.username}/roomJoined`);
+
+  const unsubscribe = onValue(userRoomRef, (snapshot) => {
+    const roomId = snapshot.val();
+
+    if (roomId) {
+      console.log("Navigating to room:", roomId);
+      navigate(`/compete/${roomId}`);
+    }
+  });
+
+  return () => unsubscribe();
+}, [authUser.username, navigate]);
+
+
 
 
 

@@ -39,7 +39,7 @@ const Profile = () => {
         toast.error(error.message)
       }
 
-    }
+    }   
 
     fetchUserProfile(username);
   },[username])

@@ -11,6 +11,7 @@ import { useFirebase } from '../context/FirebaseContext'
 import useLogOut from '../hooks/useLogOut'
 import useSubmitTest from '../hooks/useSubmitTest'
 import useStoreUsersInLobby from '../hooks/useStoreUsersInLobby'
+import useDeleteUserFromLobby from '../hooks/useDeleteUserFromLobby'
 
 
 
@@ -36,7 +37,7 @@ function HomePage() {
   
   const {storeUsersInLobby}=useStoreUsersInLobby()
 
-  const { storeUsersToOnlineLobby, usersInLobby, deleteUserFromOnlineLobby } = useFirebase()
+  // const { storeUsersToOnlineLobby, usersInLobby, deleteUserFromOnlineLobby } = useFirebase()
 
   const { authUser } = useAuthContext()
 
@@ -185,6 +186,8 @@ function HomePage() {
     setShowResults(false);
 
   }
+
+  const {deleteUserFromOnlineLobby}=useDeleteUserFromLobby()
 
   const handleStartAndCloseCompeteMode = async () => {
     if (competeMode === true) {

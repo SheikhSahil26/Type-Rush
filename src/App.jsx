@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import SignUp from './pages/SignUp'
 import RoomPage from './pages/RoomPage'
 import Profile from './pages/Profile'
+import GameResults from './pages/GameResults'
 import { Toaster } from 'react-hot-toast'
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
       <Route path="/login" element={authUser ? <Navigate to='/'/> : <Login/>}/>
       <Route path="/compete/:roomId" element={authUser ? <RoomPage/> : <Navigate to='/login'/>}/>
       <Route path="/profile/:username" element={authUser ? <Profile/> : <Navigate to='/login'/>}/>
+      <Route path="/room/:roomId/results" element={authUser ? <GameResults/> : <Navigate to='/login'/>}/>
       </Routes>
  <Toaster/>
 
