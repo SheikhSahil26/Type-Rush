@@ -12,7 +12,8 @@ const useLogOut = () => {
 
             const res=await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`,{
                 method:"POST",
-                // headers:{"Content-Type":"application/json"},  no body then no header
+                headers:{"Content-Type":"application/json"},  
+                credentials:true,
                 // body:JSON.stringify({username,password}),
             })
 

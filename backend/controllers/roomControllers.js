@@ -93,19 +93,20 @@ const sendChallengeToPlayer = async (req,res)=>{
 const makeRoomWhenChallengeAccepted = async (req, res) => {
   const { player1, player2, roomId } = req.body;
 
-  const roomRef = ref(database, `myDB/challengeRoom/${roomId}`);
-  const player1Ref = ref(database, `myDB/online-users/${player1}`);
-  const player2Ref = ref(database, `myDB/online-users/${player2}`);
+  const roomRef = database.ref(`myDB/challengeRoom/${roomId}`);
+  const player1Ref = database.ref(`myDB/online-users/${player1}`);
+  const player2Ref = database.ref(`myDB/online-users/${player2}`);
 
   try {
-    const snapshot = await get(roomRef);
+    const snapshot = await roomRef.once("value");
+
     if (snapshot.exists()) {
       return res.status(400).json({ message: "Room already exists." });
     }
 
     const randomParagaph=paragraphs[Math.floor(Math.random() * paragraphs.length)];
 
-    await set(roomRef, {
+    await roomRef.set({
   paragraph: randomParagaph, // You can fetch this from DB or use paragraphId
   timer: {
     startTime: null,     // You'll set this when the game starts
@@ -134,7 +135,7 @@ const makeRoomWhenChallengeAccepted = async (req, res) => {
 });
 
 
-    await update(player1Ref, {
+    await player1Ref.update({
       notification: {
         challenger: "",
         message: "",
@@ -143,7 +144,7 @@ const makeRoomWhenChallengeAccepted = async (req, res) => {
       roomJoined: roomId,
     });
 
-    await update(player2Ref, {
+    await player2Ref.update({
       status: "busy",
       roomJoined: roomId,
     });
@@ -175,7 +176,7 @@ const roomData=async(req,res)=>{
 
      try{
        
-            const snapshot = await get(roomRef);
+            const snapshot = await roomRef.once("value")
        
             console.log(snapshot.val());
        
@@ -192,10 +193,10 @@ const roomData=async(req,res)=>{
 
 const deleteUserFromLobby=async(req,res)=>{
    const username = req.params.username;
-  const userRef = ref(database, `myDB/online-users/${username}`);
+  const userRef = database.ref(`myDB/online-users/${username}`);
 
   try {
-    await remove(userRef);
+    await userRef.remove();
     res.status(200).json({ message: `User ${username} removed.` });
   } catch (error) {
     console.error('Error removing user:', error);
