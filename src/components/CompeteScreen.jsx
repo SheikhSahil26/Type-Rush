@@ -65,14 +65,7 @@ const storeUsersToOnlineLobby=async(username)=>{
 }catch(error){
   toast.error(error.message);
 }
-    
-
-    
-  
-  
-    
-
-  }, [authUser])
+}, [authUser])  
 
   const {usersInLobby} = useLobbyUsers();
 
@@ -158,17 +151,39 @@ useEffect(() => {
   return () => unsubscribe();
 }, [authUser.username, navigate]);
 
+const {denialMessage}=useDenyChallenge(authUser.username)
+
+const handleDeclineChallenge = async () => {
+  await denialMessage(incomingChallenge.challenger);
+}
 
 
 
 
-  const { denialMessage } = useDenyChallenge(authUser?.username);
+  useEffect(() => {
+  const userNotificationRef = ref(db, `myDB/online-users/${authUser.username}/notification`);
 
+  const unsubscribe = onValue(userNotificationRef, (snapshot) => {
+    const data = snapshot.val();
 
-  const handleDeclineChallenge = async () => {
-    await denialMessage(incomingChallenge.challenger);
+    // Check for denial
+    if (data?.status === 'declined') {
+      toast.error(data.message || 'Challenge declined');
+      
+      // Optionally clear the message after showing
+      set(ref(db, `myDB/online-users/${authUser.username}/notification`), null);
+    }
 
-  }
+    if (data?.challenger && data?.message) {
+      setIncomingChallenge(data);
+    } else {
+      setIncomingChallenge(null);
+    }
+  });
+
+  return () => unsubscribe();
+}, [authUser.username]);
+
 
 
 

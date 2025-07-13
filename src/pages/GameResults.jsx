@@ -1,10 +1,109 @@
 import React, { useState, useEffect } from 'react';
+import { useParams,useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Target, Zap, Clock, TrendingUp, Award, Crown, Medal } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import './gameresults.css';
+import toast from 'react-hot-toast'
+import { useAuthContext } from '../context/AuthContext';
+
 
 const GameResults = () => {
   const [showAnimation, setShowAnimation] = useState(true);
+
+  const navigate=useNavigate()
+
+  const {authUser}=useAuthContext()
+
+  const backendUrl=import.meta.env.VITE_BACKEND_URL
+  const {roomId}=useParams();
+  console.log(roomId,backendUrl)
+
+  const [room,setRoom]=useState({})
+  const [players, setPlayers] = useState([]);
+  const [user,setUser]=useState({})
+  const [opponent,setOpponent]=useState({})
+  const [opponentUsername,setOpponentUsername]=useState("");
+
+  useEffect(()=>{
+    const fetchGameResults=async()=>{
+      try{
+        const res = await fetch(`${backendUrl}/api/room/results/${roomId}`,{
+          method:"GET",
+          credentials:"include",
+           headers: {
+          "Content-Type": "application/json"
+        },
+        })
+        const data = await res.json();
+
+        if(data.error) throw new Error(data.error)
+
+      const roomData = data.roomData;
+
+      const opponentUsername = Object.keys(roomData.progress).find(
+      username => username !== authUser.username
+      );
+
+      if (opponentUsername) {
+        setOpponent(roomData.progress[opponentUsername]);
+        setOpponentUsername(opponentUsername);
+      } 
+      console.log(roomData.progress[authUser.username])
+
+      
+
+        console.log(roomData)
+
+        setUser(roomData.progress[authUser.username])
+
+        setRoom(roomData);
+
+      // Dynamically build players array from progress + usernames
+      const tempPlayers = [];
+      if (roomData.player && roomData.progress?.[roomData.player]) {
+        tempPlayers.push({
+          id: 1,
+          username: roomData.player,
+          avatar: "🥷",
+          progress: 0,
+          wpm: roomData.progress[roomData.player].wpm,
+          accuracy: roomData.progress[roomData.player].accuracy,
+          position: 1,
+          isFinished: roomData.progress[roomData.player].isFinished,
+          currentWord: 0
+        });
+      }
+      if (roomData.host && roomData.progress?.[roomData.host]) {
+        tempPlayers.push({
+          id: 2,
+          username: roomData.host,
+          avatar: "🧙",
+          progress: 0,
+          wpm: roomData.progress[roomData.host].wpm,
+          accuracy: roomData.progress[roomData.host].accuracy,
+          position: 2,
+          isFinished: roomData.progress[roomData.host].isFinished,
+          currentWord: 0
+        });
+      }
+
+      setPlayers(tempPlayers);
+    
+
+
+
+      }
+      catch(err){
+        toast.error(err.message)
+        console.log(err)
+      }
+    }
+    fetchGameResults();
+  },[])
+
+
+console.log(players)
+
   
   // Mock data - replace with actual data from your backend
   const gameResults = {
@@ -16,45 +115,66 @@ const GameResults = () => {
         id: 1,
         username: "SpeedDemon",
         avatar: "🏆",
-        finalWpm: 78,
-        averageWpm: 72,
-        accuracy: 96.5,
-        totalCharacters: 432,
+        avgWpm: 72,
+        avgAcc: 96.5,
+        finalTyped: 432,
         correctCharacters: 417,
         position: 1,
-        completionTime: 165
       },
       {
         id: 2,
         username: "TypoMaster", 
         avatar: "⚡",
-        finalWpm: 65,
+        avgWpm: 65,
         averageWpm: 62,
-        accuracy: 98.2,
-        totalCharacters: 378,
+        avgAcc: 98.2,
+        finalTyped: 378,
         correctCharacters: 371,
         position: 2,
-        completionTime: 180
+        // completionTime: 180
       }
     ]
   };
 
   // Generate mock real-time data for graphs
-  const generateTimeSeriesData = () => {
-    const data = [];
-    for (let i = 0; i <= 180; i += 5) {
-      data.push({
-        time: i,
-        SpeedDemon_wpm: Math.max(0, 72 + Math.sin(i / 30) * 8 + (Math.random() - 0.5) * 6),
-        TypoMaster_wpm: Math.max(0, 62 + Math.sin(i / 25) * 7 + (Math.random() - 0.5) * 5),
-        SpeedDemon_accuracy: Math.max(85, Math.min(100, 96.5 + Math.sin(i / 40) * 3 + (Math.random() - 0.5) * 2)),
-        TypoMaster_accuracy: Math.max(85, Math.min(100, 98.2 + Math.sin(i / 35) * 2 + (Math.random() - 0.5) * 1.5))
-      });
-    }
-    return data;
-  };
+ const generateTimeSeriesData = (player1, player2, durationInSeconds) => {
+  const data = [];
 
-  const [timeSeriesData] = useState(generateTimeSeriesData());
+  const maxLength = Math.max(
+    player1.wpm.length,
+    player2.wpm.length,
+    player1.accuracy.length,
+    player2.accuracy.length
+  );
+
+  const interval = Math.floor(durationInSeconds / maxLength); // seconds between each data point
+
+  for (let i = 0; i < maxLength; i++) {
+    data.push({
+      time: i * interval,
+      [`${authUser.username}_wpm`]: player1.wpm[i] || 0,
+      [`${opponentUsername}_wpm`]: player2.wpm[i] || 0,
+      [`${authUser.username}_accuracy`]: player1.accuracy[i] || 0,
+      [`${opponentUsername}_accuracy`]: player2.accuracy[i] || 0,
+    });
+  }
+
+  return data;
+};
+
+ const [timeSeriesData, setTimeSeriesData] = useState([]);
+
+useEffect(() => {
+  if (players.length === 2 && room?.timer?.currentTime) {
+    try {
+      const tsData = generateTimeSeriesData(user, opponent, room.timer.currentTime);
+      setTimeSeriesData(tsData);
+    } catch (err) {
+      console.error("Failed to generate time series:", err);
+    }
+  }
+}, [players, room]);
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -63,11 +183,32 @@ const GameResults = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const leaveRoom=async()=>{
+    try{
+      const res=await fetch(`${backendUrl}/api/room/delete-user/${authUser.username}`,{
+      credentials:"include",
+      method:"POST",
+      headers: {
+          "Content-Type": "application/json"
+        },
+    })
+
+      navigate(`/`);
+
+    }catch(err){
+      
+      toast.error("error leaving room")
+    }
+    
+
+    
+  }
+
   const renderHeader = () => (
     <div className="header">
       <div className="header-content">
         <button
-          onClick={() => window.history.back()}
+          onClick={leaveRoom}
           className="back-button"
         >
           <ArrowLeft size={16} />
@@ -80,7 +221,7 @@ const GameResults = () => {
             Match Results
           </h1>
           <p className="subtitle">
-            Room: {gameResults.roomId} • Duration: {Math.floor(gameResults.duration / 60)}:{(gameResults.duration % 60).toString().padStart(2, '0')}
+            Room: {roomId} • Duration: {Math.floor(room?.timer?.currentTime)}
           </p>
         </div>
       </div>
@@ -88,7 +229,10 @@ const GameResults = () => {
   );
 
   const renderWinnerCard = () => {
-    const winner = gameResults.players.find(p => p.username === gameResults.winner);
+    const winner = room.winner;
+
+    const player=(authUser.username===winner?user:opponent);
+    console.log(player)
     
     return (
       <div className="winner-card">
@@ -96,31 +240,31 @@ const GameResults = () => {
         
         <div className="winner-content">
           <div className="winner-avatar">
-            {winner?.avatar}
+            {player?.avatar}
           </div>
           
           <h2 className="winner-title">
-            🎉 {winner?.username} Wins! 🎉
+            🎉 {(winner===authUser.username)?authUser.username:opponentUsername} Wins! 🎉
           </h2>
           
           <div className="winner-stats">
             <div className="winner-stat">
               <div className="stat-value wpm-color">
-                {winner?.finalWpm}
+                {player?.avgWPM?.toFixed(0)}
               </div>
               <div className="stat-label">WPM</div>
             </div>
             
             <div className="winner-stat">
               <div className="stat-value accuracy-color">
-                {winner?.accuracy}%
+                {player?.avgAcc?.toFixed(0)}%
               </div>
               <div className="stat-label">Accuracy</div>
             </div>
             
             <div className="winner-stat">
               <div className="stat-value time-color">
-                {winner?.completionTime}s
+                {room?.timer?.currentTime}s
               </div>
               <div className="stat-label">Time</div>
             </div>
@@ -132,12 +276,11 @@ const GameResults = () => {
 
   const renderPlayerStats = () => (
     <div className="players-grid">
-      {gameResults.players.map((player, index) => (
-        <div
-          key={player.id}
-          className={`player-card ${player.position === 1 ? 'winner-border' : ''}`}
+       <div
+         
+          className={`player-card ${opponent?.position === 1 ? 'winner-border' : ''}`}
         >
-          {player.position === 1 && (
+          {opponent?.position === 1 && (
             <div className="crown-badge">
               <Crown size={16} />
             </div>
@@ -145,17 +288,17 @@ const GameResults = () => {
           
           <div className="player-header">
             <div className="player-avatar">
-              {player.avatar}
+              {opponent?.avatar}
             </div>
             
             <div className="player-info">
               <h3 className="player-name">
-                {player.username}
+                {opponent?.username}
               </h3>
               <div className="player-position">
                 <Medal size={16} className="medal-icon" />
                 <span className="position-text">
-                  {player.position === 1 ? 'Winner' : `${player.position}nd Place`}
+                  {opponent?.position === 1 ? 'Winner' : `${opponent?.position}nd Place`}
                 </span>
               </div>
             </div>
@@ -168,7 +311,7 @@ const GameResults = () => {
                 <span className="stat-title">Final WPM</span>
               </div>
               <div className="stat-number wpm-color">
-                {player.finalWpm}
+                {opponent.avgWPM?.toFixed(0)}
               </div>
             </div>
 
@@ -178,7 +321,7 @@ const GameResults = () => {
                 <span className="stat-title">Accuracy</span>
               </div>
               <div className="stat-number accuracy-color">
-                {player.accuracy}%
+                {opponent.avgAcc?.toFixed(0)}%
               </div>
             </div>
 
@@ -188,7 +331,7 @@ const GameResults = () => {
                 <span className="stat-title">Avg WPM</span>
               </div>
               <div className="stat-number avg-color">
-                {player.averageWpm}
+                {opponent.avgWPM?.toFixed(0)}
               </div>
             </div>
 
@@ -198,7 +341,7 @@ const GameResults = () => {
                 <span className="stat-title">Time</span>
               </div>
               <div className="stat-number time-color">
-                {player.completionTime}s
+                {room?.timer?.currentTime}s
               </div>
             </div>
           </div>
@@ -207,18 +350,105 @@ const GameResults = () => {
             <div className="progress-info">
               <span>Characters Typed</span>
               <span className="progress-numbers">
-                {player.correctCharacters}/{player.totalCharacters}
+                {/* {player.correctCharacters}/{player.totalCharacters} */}
               </span>
             </div>
             <div className="progress-bar">
               <div 
                 className="progress-fill"
-                style={{ width: `${(player.correctCharacters / player.totalCharacters) * 100}%` }}
+                // style={{ width: `${(player.correctCharacters / player.totalCharacters) * 100}%` }}
               />
             </div>
           </div>
         </div>
-      ))}
+        
+
+
+         <div
+          
+          className={`player-card ${user?.position === 1 ? 'winner-border' : ''}`}
+        >
+          {user?.position === 1 && (
+            <div className="crown-badge">
+              <Crown size={16} />
+            </div>
+          )}
+          
+          <div className="player-header">
+            <div className="player-avatar">
+              {user?.avatar}
+            </div>
+            
+            <div className="player-info">
+              <h3 className="player-name">
+                {authUser.username}
+              </h3>
+              <div className="player-position">
+                <Medal size={16} className="medal-icon" />
+                <span className="position-text">
+                  {user?.position === 1 ? 'Winner' : `${user?.position}nd Place`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="stats-grid">
+            <div className="stat-box">
+              <div className="stat-header">
+                <Zap size={16} className="stat-icon wpm-color" />
+                <span className="stat-title">Final WPM</span>
+              </div>
+              <div className="stat-number wpm-color">
+                {user.avgWPM?.toFixed(0)}
+              </div>
+            </div>
+
+            <div className="stat-box">
+              <div className="stat-header">
+                <Target size={16} className="stat-icon accuracy-color" />
+                <span className="stat-title">Accuracy</span>
+              </div>
+              <div className="stat-number accuracy-color">
+                {user.avgAcc?.toFixed(0)}%
+              </div>
+            </div>
+
+            <div className="stat-box">
+              <div className="stat-header">
+                <TrendingUp size={16} className="stat-icon avg-color" />
+                <span className="stat-title">Avg WPM</span>
+              </div>
+              <div className="stat-number avg-color">
+                {user.avgWPM?.toFixed(0)}
+              </div>
+            </div>
+
+            <div className="stat-box">
+              <div className="stat-header">
+                <Clock size={16} className="stat-icon time-color" />
+                <span className="stat-title">Time</span>
+              </div>
+              <div className="stat-number time-color">
+                 {room?.timer?.currentTime}s
+              </div>
+            </div>
+          </div>
+
+          <div className="character-progress">
+            <div className="progress-info">
+              <span>Characters Typed</span>
+              <span className="progress-numbers">
+                {/* {player.correctCharacters}/{player.totalCharacters} */}
+              </span>
+            </div>
+            <div className="progress-bar">
+              <div 
+                className="progress-fill"
+                // style={{ width: `${(player.correctCharacters / player.totalCharacters) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
     </div>
   );
 
@@ -252,7 +482,7 @@ const GameResults = () => {
               />
               <Line 
                 type="monotone" 
-                dataKey="SpeedDemon_wpm" 
+                 dataKey={`${authUser.username}_wpm`} 
                 stroke="#f59e0b" 
                 strokeWidth={3}
                 dot={false}
@@ -260,7 +490,7 @@ const GameResults = () => {
               />
               <Line 
                 type="monotone" 
-                dataKey="TypoMaster_wpm" 
+                dataKey={`${opponentUsername}_wpm`} 
                 stroke="#3b82f6" 
                 strokeWidth={3}
                 dot={false}
@@ -299,7 +529,7 @@ const GameResults = () => {
               />
               <Line 
                 type="monotone" 
-                dataKey="SpeedDemon_accuracy" 
+                 dataKey={`${authUser.username}_wpm`} 
                 stroke="#10b981" 
                 strokeWidth={3}
                 dot={false}
@@ -307,7 +537,7 @@ const GameResults = () => {
               />
               <Line 
                 type="monotone" 
-                dataKey="TypoMaster_accuracy" 
+                dataKey={`${opponentUsername}_wpm`} 
                 stroke="#06b6d4" 
                 strokeWidth={3}
                 dot={false}
@@ -328,27 +558,28 @@ const GameResults = () => {
       </h3>
 
       <div className="summary-chart">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={[
-            { metric: 'Final WPM', SpeedDemon: 78, TypoMaster: 65 },
-            { metric: 'Accuracy', SpeedDemon: 96.5, TypoMaster: 98.2 },
-            { metric: 'Avg WPM', SpeedDemon: 72, TypoMaster: 62 }
-          ]}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
-            <XAxis dataKey="metric" stroke="#94a3b8" fontSize={12} />
-            <YAxis stroke="#94a3b8" fontSize={12} />
-            <Tooltip 
-              contentStyle={{
-                backgroundColor: '#1e293b',
-                border: '1px solid rgba(148, 163, 184, 0.2)',
-                borderRadius: '8px',
-                color: '#e2e8f0'
-              }}
-            />
-            <Bar dataKey="SpeedDemon" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="TypoMaster" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+       <ResponsiveContainer width="100%" height="100%">
+  <BarChart data={[
+    { metric: 'Final WPM', [authUser.username]: user.avgWPM, [opponentUsername]: opponent.avgWPM },
+    { metric: 'Accuracy', [authUser.username]: user.avgAcc, [opponentUsername]: opponent.avgAcc },
+    { metric: 'Avg WPM', [authUser.username]: user.avgWPM, [opponentUsername]: opponent.avgWPM }
+  ]}>
+    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" />
+    <XAxis dataKey="metric" stroke="#94a3b8" fontSize={12} />
+    <YAxis stroke="#94a3b8" fontSize={12} />
+    <Tooltip 
+      contentStyle={{
+        backgroundColor: '#1e293b',
+        border: '1px solid rgba(148, 163, 184, 0.2)',
+        borderRadius: '8px',
+        color: '#e2e8f0'
+      }}
+    />
+    <Bar dataKey={authUser.username} fill="#f59e0b" radius={[4, 4, 0, 0]} />
+    <Bar dataKey={opponentUsername} fill="#3b82f6" radius={[4, 4, 0, 0]} />
+  </BarChart>
+</ResponsiveContainer>
+
       </div>
     </div>
   );

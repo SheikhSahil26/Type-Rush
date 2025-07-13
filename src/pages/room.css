@@ -46,3 +46,17 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-20px); }
 }
+
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  background-color: white;
+  animation: blink 1s step-start 0s infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}

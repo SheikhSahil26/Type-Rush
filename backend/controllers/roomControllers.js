@@ -1,6 +1,6 @@
 const express = require('express');
-const database = require('../utils/firebaseConfig');
 const router = express.Router();
+const database = require('../utils/firebaseConfig');
 const { get, ref, set, update,remove } = require("firebase-admin/database");
 const paragraphs = require('../utils/paragraphs.json');
 
@@ -110,7 +110,7 @@ const makeRoomWhenChallengeAccepted = async (req, res) => {
   paragraph: randomParagaph, // You can fetch this from DB or use paragraphId
   timer: {
     startTime: null,     // You'll set this when the game starts
-    currentTime: 60      // Starting value in seconds
+    currentTime: 60     // Starting value in seconds
   },
   player: player1,
   host: player2,
@@ -118,16 +118,16 @@ const makeRoomWhenChallengeAccepted = async (req, res) => {
   spectators: ['sahil'], 
   progress: {
     [player1]: {
-      typedLength: 0,
-      accuracy: 100,
+      typedLength: [0],
+      accuracy: [100],
       isFinished: false,
-      wpm: 0
+      wpm: [0]
     },
     [player2]: {
-      typedLength: 0,
-      accuracy: 100,
+      typedLength: [0],
+      accuracy: [100],
       isFinished: false,
-      wpm: 0
+      wpm: [0]
     }
   },
   result: null,
@@ -179,6 +179,12 @@ const roomData=async(req,res)=>{
             const snapshot = await roomRef.once("value")
        
             console.log(snapshot.val());
+
+            if(snapshot.val()===null){
+              return res.status(400).json({
+                error:"no room found"
+              })
+            }
        
             return res.status(200).json({
              roomData:snapshot.val()
@@ -204,11 +210,37 @@ const deleteUserFromLobby=async(req,res)=>{
   }
 }
 
+const getRoomResults=async(req,res)=>{
+  const roomId=req.params.roomId;
+
+  const roomRef=database.ref(`myDB/challengeRoom/${roomId}`);
+
+  try{
+    const snapshot=await roomRef.once("value");
+    console.log("result",snapshot.val());
+
+    return res.status(200).json({
+      roomData:snapshot.val(),
+    })
+
+
+
+  }catch(error){
+    console.log(error)
+    res.status(500).json({
+      error:"Internal server error",
+    })
+  }
+
+
+}
+
 
 module.exports = {
   storeUsersToOnlineLobby,
   sendChallengeToPlayer,
   makeRoomWhenChallengeAccepted,
   roomData,
-  deleteUserFromLobby
+  deleteUserFromLobby,
+  getRoomResults,
 }

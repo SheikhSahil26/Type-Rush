@@ -1,5 +1,7 @@
 const User=require("../models/userModel")
 const generateTokenAndSetCookie=require("../utils/generateToken")
+const database = require('../utils/firebaseConfig');
+const { get, ref, set, update,remove } = require("firebase-admin/database");
 
 //this is signup controller
 async function userSignUp(req,res){
@@ -68,6 +70,7 @@ async function userLogin(req,res){
 
     try{
         const {username,password}=req.body;
+        name=username
     
         const findUser=await User.findOne({username});
 
@@ -107,8 +110,13 @@ async function userLogin(req,res){
 //this is log out controller
 
 async function userLogOut(req,res){
+    // const username = req.user.username;
+    // console.log(username)
+    // const userRef = database.ref(`myDB/online-users/${username}`);
 
     try{
+        // await userRef.remove();
+
         res.cookie('jwt',"",{
             maxAge:0,
         })

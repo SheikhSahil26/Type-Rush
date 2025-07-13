@@ -1,29 +1,33 @@
-// hooks/useChallengeNotificationListener.js
+import { ref, set } from 'firebase/database';
+import { db } from '../context/FirebaseContext';
 
-import { useEffect, useState } from 'react';
-import { ref, onValue } from 'firebase/database';
-import { toast } from 'react-toastify';
-import { db } from "../context/FirebaseContext";
+const useDenyChallenge = (authUsername) => {
+  const denialMessage = async (challengerUsername) => {
+    if (!challengerUsername) return;
 
-const useDenyChallenge = (username) => {
-  const [denialMessage, setDenialMessage] = useState(null);
+    try {
+      const challengerNotificationRef = ref(
+        db,
+        `myDB/online-users/${challengerUsername}/notification`
+      );
 
-  useEffect(() => {
-    if (!username) return;
+      // Send denial message to challenger
+      await set(challengerNotificationRef, {
+        message: `${authUsername} declined your challenge.`,
+        status: 'declined',
+        declinedBy: authUsername,
+      });
 
-    const notificationRef = ref(db, `myDB/online-users/${username}/notification`);
-
-    const unsubscribe = onValue(notificationRef, (snapshot) => {
-      const data = snapshot.val();
-
-      if (data?.message === "I can't play right now") {
-        setDenialMessage(data.message);
-        toast.info("⚠️ Your challenge was declined.");
-      }
-    });
-
-    return () => unsubscribe();
-  }, [username]);
+      // Optionally, clear notification from current user
+      const currentUserNotificationRef = ref(
+        db,
+        `myDB/online-users/${authUsername}/notification`
+      );
+      await set(currentUserNotificationRef, null);
+    } catch (err) {
+      console.error("Error sending denial message:", err.message);
+    }
+  };
 
   return { denialMessage };
 };

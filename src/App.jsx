@@ -22,7 +22,7 @@ function App() {
       <Route path="/login" element={authUser ? <Navigate to='/'/> : <Login/>}/>
       <Route path="/compete/:roomId" element={authUser ? <RoomPage/> : <Navigate to='/login'/>}/>
       <Route path="/profile/:username" element={authUser ? <Profile/> : <Navigate to='/login'/>}/>
-      <Route path="/room/:roomId/results" element={authUser ? <GameResults/> : <Navigate to='/login'/>}/>
+      <Route path="/room/results/:roomId" element={authUser ? <GameResults/> : <Navigate to='/login'/>}/>
       </Routes>
  <Toaster/>
 

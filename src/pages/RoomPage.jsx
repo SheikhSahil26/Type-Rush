@@ -6,6 +6,7 @@ import { ref, onValue,remove,onDisconnect,set, get,update } from 'firebase/datab
 import { useAuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './room.css'
+import toast from 'react-hot-toast';
 // import useRoomData from '../hooks/useRoomData'; 
 
   
@@ -25,10 +26,21 @@ const RoomPage = () => {
     const [loading, setLoading] = useState(true);
     const [totalLength,setTotalLength]=useState(0);
 
+
+//<-----------this is used for the typing records---------------->
+    const typedLengthRef = useRef([]);
+const typeAccuracyRef = useRef([]);
+const wpmRef = useRef([]);
+const correctRef = useRef(0);
+const incorrectRef = useRef(0);
     const inputRef = useRef(null);
+    const startTimeRef = useRef(null);
+
+ //------------------******--------------------------------------->   
 
   const {roomId}=useParams()
  
+  const navigate = useNavigate();
 
   // const {getRoomData}=useRoomData()
   const backendUrl=import.meta.env.VITE_BACKEND_URL
@@ -50,6 +62,8 @@ const RoomPage = () => {
       });
       const data = await res.json();
       const roomData = data.roomData;
+
+      if(data.error) throw new Error(data.error)
 
       setTotalLength(roomData.paragraph.length);
 
@@ -89,16 +103,19 @@ const RoomPage = () => {
       setPlayers(tempPlayers);
     
     } catch (err) {
+      toast.error(err.message);
+      
       console.error("Failed to fetch room:", err);
+      navigate(`/`)
     }
   };
 
   getRoomData(roomId);
 }, [roomId]);
 
-  const [timeLeft, setTimeLeft] = useState(room?.timer?.currentTime || 60);
+  const [timeLeft, setTimeLeft] = useState(room?.timer?.currentTime || 10);
 useEffect(() => {
-  if (room?.timer?.currentTime) {
+  if (room?.timer?.currentTime) { 
     setTimeLeft(room.timer.currentTime);
   }
 }, [room]);
@@ -125,110 +142,86 @@ useEffect(() => {
 }, [roomId]);
 
 
+  const handleTimerEnded = async () => {
+  if (!roomId || players.length === 0) return;
+
+  console.log("Accuracy over time:", typeAccuracyRef.current);
+console.log("WPM over time:", wpmRef.current);
+console.log("Typed lengths over time:", typedLengthRef.current);
+
+
+  // Sort players by progress to find the winner
+  const sortedPlayers = [...players].sort((a, b) => b.progress - a.progress);
+  const winner = sortedPlayers[0].username;
 
   
-//   useEffect(() => {
 
-//   if (!roomId) return;
+  // Update Firebase
+  const updates = {};
+  updates[`myDB/challengeRoom/${roomId}/status`] = "time-up";
+  updates[`myDB/challengeRoom/${roomId}/winner`] = winner;
+  updates[`myDB/challengeRoom/${roomId}/progress/${authUser.username}/accuracy`]=typeAccuracyRef.current
+  updates[`myDB/challengeRoom/${roomId}/progress/${authUser.username}/wpm`]=wpmRef.current
+  updates[`myDB/challengeRoom/${roomId}/progress/${authUser.username}/typedLength`]=typedLengthRef.current
+  await update(ref(db), updates);
+};
 
-//   const roomRef = ref(db, `myDB/challengeRoom/${roomId}`);
-
-//   const unsubscribe = onValue(
-//     roomRef,
-//     (snapshot) => {
-//       try {
-//         if (snapshot.exists()) {
-//           const data = snapshot.val();
-//           console.log(data)
-//           // Defensive checks in case any fields are objects
-//           setParagraph(typeof data.paragraph === 'object' ? JSON.stringify(data.paragraph) : data.paragraph || '');
-//           setProgress(typeof data.progress === 'number' ? data.progress : 0);
-//           setStatus(typeof data.status === 'string' ? data.status : '');
-//           setTimer(typeof data.timer === 'number' ? data.timer : 0);
-
-//           // Safely handle player objects
-//           const safePlayers = [data.player1, data.player2]
-//             .filter(Boolean)
-//             .map(p => typeof p === 'object' ? p.username || JSON.stringify(p) : p);
-//           setPlayers(safePlayers);
-//         } else {
-//           console.warn('No room found');
-//           toast.error("no room found")
-//         }
-//       } catch (err) {
-//         console.error('Data processing error:', err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     },
-//     (error) => {
-//       console.error('Error fetching room:', error);
-//       setLoading(false);
-//     }
-//   );
-
-//   return () => unsubscribe();
-// }, [roomId]);
+// const hasHandledEnd = useRef(false);
 
 
-  // Mock data for demonstration
-  // const [roomData] = useState({
-  //   roomId: "ROOM-ABC123",
-  //   paragraph: "The quick brown fox jumps over the lazy dog. This pangram contains every letter of the English alphabet at least once. It has been used for decades to test typewriters, keyboards, and fonts. The sentence is short, memorable, and perfect for typing practice. Many typists use this phrase to warm up their fingers before longer typing sessions.",
-  //   players: [
-  //     {
-  //       id: 1,
-  //       username: "SpeedDemon",
-  //       avatar: "🏆",
-  //       progress: 45, // percentage
-  //       wpm: 78,
-  //       accuracy: 96.5,
-  //       position: 1,
-  //       isFinished: false,
-  //       currentWord: 23
-  //     },
-  //     {
-  //       id: 2,
-  //       username: "TypoMaster",
-  //       avatar: "⚡",
-  //       progress: 38,
-  //       wpm: 65,
-  //       accuracy: 98.2,
-  //       position: 2,
-  //       isFinished: false,
-  //       currentWord: 19
-  //     }
-  //   ],
-  //   spectators: [
-  //     { id: 1, username: "WatcherOne", avatar: "👀" },
-  //     { id: 2, username: "TypingFan", avatar: "🎯" },
-  //     { id: 3, username: "KeyboardLover", avatar: "⌨️" },
-  //     { id: 4, username: "SpeedWatcher", avatar: "🚀" },
-  //     { id: 5, username: "RaceObserver", avatar: "🏁" }
-  //   ]
-  // });
+// const startTimeRef = useRef(Date.now());
 
-  // const [players, setPlayers] = useState(roomData.players);
 
   // Simulate race progress
   useEffect(() => {
-    if (!isRaceStarted) return;
+  if (!isRaceStarted) return;
 
-    inputRef.current?.focus();
+  inputRef.current?.focus();
 
-    const interval = setInterval(() => {
-      setPlayers(prev => prev.map(player => ({
+    
+
+  const interval = setInterval(() => {
+    setPlayers(prev =>
+      prev.map(player => ({
         ...player,
         progress: Math.min(100, player.progress + Math.random() * 2),
         wpm: Math.max(0, player.wpm + (Math.random() - 0.5) * 3),
         currentWord: Math.floor((player.progress / 100) * 50)
-      })));
+      }))
+    );
 
-      setTimeLeft(prev => Math.max(0, prev - 1));
-    }, 1000);
+    setTimeLeft(prev => {
+      const newTime = Math.max(0, prev - 1);
 
-    return () => clearInterval(interval);
-  }, [isRaceStarted]);
+      // 🟡 Timer reached 0
+      if (newTime === 0) {
+        clearInterval(interval); // Stop ticking
+        handleTimerEnded(); // 🔥 Trigger winner logic
+      }
+
+      return newTime;
+    });
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [isRaceStarted]);
+
+
+  useEffect(() => {
+  if (!roomId) return;
+
+  const countdownRef = ref(db, `myDB/challengeRoom/${roomId}/countdown`);
+  const unsub = onValue(countdownRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data?.countdownStarted) {
+      setShowCountdown(true);
+      setCountdown(3); // or calculate based on timestamp difference if needed
+    }
+  });
+
+  return () => unsub();
+}, [roomId]);
+
 
   // Handle countdown
   useEffect(() => {
@@ -238,44 +231,109 @@ useEffect(() => {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (showCountdown && countdown === 0) {
+
       setShowCountdown(false);
       setIsRaceStarted(true);
     }
   }, [showCountdown, countdown]);
 
   const startRace = () => {
-    setShowCountdown(true);
-    
-    setCountdown(3);
-  };
+  const countdownRef = ref(db, `myDB/challengeRoom/${roomId}/countdown`);
+  set(countdownRef, {
+    countdownStarted: true,
+    startTimestamp: Date.now()
+  });
+};
 
-const navigate = useNavigate();
+
+
 const [showWinnerAnimation, setShowWinnerAnimation] = useState(false);
+
+const [winner,setWinner]=useState("");
 
 useEffect(() => {
   if (!roomId || !authUser?.username) return;
 
   const statusRef = ref(db, `myDB/challengeRoom/${roomId}/status`);
+  const progressRef = ref(db, `myDB/challengeRoom/${roomId}/progress`);
   const winnerRef = ref(db, `myDB/challengeRoom/${roomId}/winner`);
-
+  
   const unsubscribeStatus = onValue(statusRef, (statusSnap) => {
     const statusVal = statusSnap.val();
-    if (!statusVal) return;
+    if (statusVal !== "time-up") return;
 
-    onValue(winnerRef, (winnerSnap) => {
-      const winnerVal = winnerSnap.val();
-      if (winnerVal === authUser.username) {
-        // 🎉 Trigger animation
+    onValue(progressRef, (progressSnap) => {
+      const progressData = progressSnap.val();
+      if (!progressData) return;
+
+      const players = [];
+      let maxWPM = 1, maxAcc = 1, maxTyped = 1;
+
+      // Step 1: Process each player's data
+      for (const [username, data] of Object.entries(progressData)) {
+        const wpmArr = data.wpm || [];
+        const accArr = data.accuracy || [];
+        const typedArr = data.typed || [];
+
+        const avgWPM = wpmArr.length ? wpmArr.reduce((a, b) => a + b, 0) / wpmArr.length : 0;
+        const avgAcc = accArr.length ? accArr.reduce((a, b) => a + b, 0) / accArr.length : 0;
+        const finalTyped = typedArr.length ? typedArr[typedArr.length - 1] : 0;
+
+        maxWPM = Math.max(maxWPM, avgWPM);
+        maxAcc = Math.max(maxAcc, avgAcc);
+        maxTyped = Math.max(maxTyped, finalTyped);
+
+        players.push({ username, avgWPM, avgAcc, finalTyped });
+      }
+
+      // Step 2: Calculate composite score
+      for (const player of players) {
+        const wpmScore = (player.avgWPM / maxWPM) * 100;
+        const accScore = (player.avgAcc / maxAcc) * 100;
+        const typedScore = (player.finalTyped / maxTyped) * 100;
+
+        // Weighted score (adjust weights if needed)
+        player.finalScore = (wpmScore * 0.4) + (accScore * 0.4) + (typedScore * 0.2);
+
+
+        const playerRef = ref(db, `myDB/challengeRoom/${roomId}/progress/${player.username}`);
+        update(playerRef, {
+          avgWPM: player.avgWPM,
+          avgAcc: player.avgAcc,
+          finalTyped: player.finalTyped,
+          finalScore: player.finalScore
+        });
+
+
+      }
+
+      // Step 3: Determine winner
+      const sorted = players.sort((a, b) => b.finalScore - a.finalScore);
+      const winner = sorted[0].username;
+
+      // Step 4: Save winner to Firebase
+      update(ref(db, `myDB/challengeRoom/${roomId}`), {
+        winner: winner
+      });
+
+      
+
+      // Step 5: Animate and navigate
+      if (winner === authUser.username) {
+        setWinner(winner);
         setShowWinnerAnimation(true);
-
-        // After delay (e.g. 5 seconds), go to analysis page
         setTimeout(() => {
-          navigate(`/room/${roomId}/results`);
+          navigate(`/room/results/${roomId}`);
+        }, 5000);
+      } else {
+        setShowWinnerAnimation(true);
+        setTimeout(() => {
+          navigate(`/room/results/${roomId}`);
         }, 5000);
       }
+
     }, { onlyOnce: true });
   });
-
   return () => {
     unsubscribeStatus();
   };
@@ -473,192 +531,244 @@ const leaveRoom = async () => {
     </div>
   );
 
-  const renderRaceTrack = () => (
-    <div style={{
-      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.7))',
-      borderRadius: '16px',
-      padding: window.innerWidth < 768 ? '16px' : '24px',
-      border: '1px solid rgba(148, 163, 184, 0.1)',
-      marginBottom: '24px'
-    }}>
-      <h3 style={{
-        margin: '0 0 20px 0',
-        color: '#e2e8f0',
-        fontSize: window.innerWidth < 768 ? '1rem' : '1.2rem',
-        fontWeight: '600'
-      }}>
-        Race Progress
-      </h3>
+//   const sendProgressToFirebase = () => {
+//    const typedLen = typedText.length;
+//     const correctChars = typedText
+//       .split('')
+//       .filter((char, i) => char === room.paragraph[i]).length;
+//     const incorrectChars = typedLen - correctChars;
 
-      {players.map((player, index) => (
-        <div key={player.id} style={{ marginBottom: '20px' }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: window.innerWidth < 480 ? 'column' : 'row',
-            justifyContent: 'space-between',
-            alignItems: window.innerWidth < 480 ? 'flex-start' : 'center',
-            marginBottom: '8px',
-            gap: window.innerWidth < 480 ? '8px' : '0'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '20px' }}>{player.avatar}</span>
-              <span style={{
-                color: '#e2e8f0',
-                fontWeight: '600',
-                fontSize: window.innerWidth < 480 ? '14px' : '16px'
-              }}>
-                {player.username}
-              </span>
-              <span style={{
-                color: '#94a3b8',
-                fontSize: window.innerWidth < 480 ? '12px' : '14px'
-              }}>
-                {player.wpm?.toFixed(0)} WPM • {player.accuracy}% accuracy
-              </span>
-            </div>
-            <span style={{
-              color: '#f59e0b',
-              fontWeight: '700',
-              fontSize: window.innerWidth < 480 ? '14px' : '16px'
-            }}>
-              {player?.progress?.toFixed(0)}%
-            </span>
-          </div>
+//     correctRef.current = correctChars;
+//     incorrectRef.current = incorrectChars;
 
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            height: '12px',
-            background: 'rgba(51, 65, 85, 0.6)',
-            borderRadius: '6px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: `${player.progress}%`,
-              height: '100%',
-              background: index === 0 
-                ? 'linear-gradient(135deg, #10b981, #059669)'
-                : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-              transition: 'width 0.3s ease',
-              borderRadius: '6px'
-            }} />
+//     const typedLength = correctChars + incorrectChars;
+//     const accuracy = typedLength === 0 ? 0 : (correctChars * 100) / typedLength;
+//     const durationInMinutes = (Date.now() - startTimeRef.current) / 1000 / 60;
+//     const wpm = typedLength === 0 ? 0 : (typedLength / 5) / durationInMinutes;
+ 
+//   update(ref(db, `myDB/challengeRoom/${roomId}/progress/${authUser.username}`), {
+//     typedLength,
+//     accuracy,
+//     wpm,
+//   });
+// };
+
+// useEffect(() => {
+//   if (!isTyping) return;
+
+//   const interval = setInterval(() => {
+//     sendProgressToFirebase();
+//   }, 2000); // every 1 second
+
+//   return () => clearInterval(interval);
+// }, [isTyping, typedText]);
+
+
+//   const renderRaceTrack = () => (
+//     <div style={{
+//       background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.7))',
+//       borderRadius: '16px',
+//       padding: window.innerWidth < 768 ? '16px' : '24px',
+//       border: '1px solid rgba(148, 163, 184, 0.1)',
+//       marginBottom: '24px'
+//     }}>
+//       <h3 style={{
+//         margin: '0 0 20px 0',
+//         color: '#e2e8f0',
+//         fontSize: window.innerWidth < 768 ? '1rem' : '1.2rem',
+//         fontWeight: '600'
+//       }}>
+//         Race Progress
+//       </h3>
+
+//       {players.map((player, index) => (
+//         <div key={player.id} style={{ marginBottom: '20px' }}>
+//           <div style={{
+//             display: 'flex',
+//             flexDirection: window.innerWidth < 480 ? 'column' : 'row',
+//             justifyContent: 'space-between',
+//             alignItems: window.innerWidth < 480 ? 'flex-start' : 'center',
+//             marginBottom: '8px',
+//             gap: window.innerWidth < 480 ? '8px' : '0'
+//           }}>
+//             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+//               <span style={{ fontSize: '20px' }}>{player.avatar}</span>
+//               <span style={{
+//                 color: '#e2e8f0',
+//                 fontWeight: '600',
+//                 fontSize: window.innerWidth < 480 ? '14px' : '16px'
+//               }}>
+//                 {player.username}
+//               </span>
+//               <span style={{
+//                 color: '#94a3b8',
+//                 fontSize: window.innerWidth < 480 ? '12px' : '14px'
+//               }}>
+//                 {/* {player.wpm?.toFixed(0)} WPM • {player.accuracy}% accuracy */}
+//               </span>
+//             </div>
+//             <span style={{
+//               color: '#f59e0b',
+//               fontWeight: '700',
+//               fontSize: window.innerWidth < 480 ? '14px' : '16px'
+//             }}>
+//               {(((correctRef.current+incorrectRef.current)/room?.paragraph?.length)*100).toFixed(0)}%
+//             </span>
+//           </div>
+
+//           <div style={{
+//             position: 'relative',
+//             width: '100%',
+//             height: '12px',
+//             background: 'rgba(51, 65, 85, 0.6)',
+//             borderRadius: '6px',
+//             overflow: 'hidden'
+//           }}>
+//             <div style={{
+//               width: `${(((correctRef.current+incorrectRef.current)/room?.paragraph?.length)*100).toFixed(0)}%`,
+//               height: '100%',
+//               background: index === 0 
+//                 ? 'linear-gradient(135deg, #10b981, #059669)'
+//                 : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+//               transition: 'width 0.3s ease',
+//               borderRadius: '6px'
+//             }} />
             
-            {/* Improved flag design */}
-            <div style={{
-              position: 'absolute',
-              right: '8px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '20px',
-              height: '20px',
-              background: 'rgba(245, 158, 11, 0.9)',
-              borderRadius: '50%',
-              border: '2px solid rgba(245, 158, 11, 1)',
-              boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
-            }}>
-              <Flag size={12} style={{ color: '#000' }} />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+//             {/* Improved flag design */}
+//             <div style={{
+//               position: 'absolute',
+//               right: '8px',
+//               top: '50%',
+//               transform: 'translateY(-50%)',
+//               display: 'flex',
+//               alignItems: 'center',
+//               justifyContent: 'center',
+//               width: '20px',
+//               height: '20px',
+//               background: 'rgba(245, 158, 11, 0.9)',
+//               borderRadius: '50%',
+//               border: '2px solid rgba(245, 158, 11, 1)',
+//               boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+//             }}>
+//               <Flag size={12} style={{ color: '#000' }} />
+//             </div>
+//           </div>
+//         </div>
+//       ))}
+//     </div>
+//   );
 
-  const [typedText, setTypedText] = useState("");
+const [typedText, setTypedText] = useState("");
+// const inputRef = useRef(null);
+const [isTyping, setIsTyping] = useState(false);
+const latestTypedTextRef = useRef("");
+
+
+
+useEffect(() => {
+  if (!isTyping || !room?.paragraph) return;
+
+  const timer = setInterval(() => {
+    const typedLen = latestTypedTextRef.current;
+    const correctChars = typedLen
+      .split('')
+      .filter((char, i) => char === room.paragraph[i]).length;
+    const incorrectChars = typedLen.length - correctChars;
+
+    correctRef.current = correctChars;
+    incorrectRef.current = incorrectChars;
+
+    const totalTyped = correctChars + incorrectChars;
+    const acc = totalTyped === 0 ? 0 : (correctChars * 100) / totalTyped;
+    const durationInMinutes = (Date.now() - startTimeRef.current) / 1000 / 60;
+    const wpm = totalTyped === 0 ? 0 : (totalTyped / 5) / durationInMinutes;
+
+    typedLengthRef.current.push(typedLen.length);
+    typeAccuracyRef.current.push(acc);
+    wpmRef.current.push(wpm);
+  }, 1000);
+
+  return () => clearInterval(timer);
+
+// 🛠 FIX: Remove `typedText` from dependency array so it doesn't reset on every keystroke
+}, [isTyping, room?.paragraph]);
+
+
+
+
 
 
 const handleTyping = (e) => {
-  const input = e.target.value;
-  console.log(input)
-  setTypedText(input);
-
-  const words = (room?.paragraph || "").split(" ");
-  const currentWordIndex = players.find(p => p.username === authUser)?.currentWord || 0;
-  const currentWord = words[currentWordIndex] || "";
-
-  // Move to next word on space and update Firebase
-  if (input.endsWith(" ")) {
-    const cleanedInput = input.trim();
-    const isCorrect = cleanedInput === currentWord;
-
-    const progressRef = ref(db, `myDB/challengeRoom/${roomId}/progress/${authUser}`);
-    update(progressRef, {
-      currentWord: currentWordIndex + 1,
-      typed: (players.find(p => p.username === authUser)?.typed || 0) + 1,
-      accuracy: isCorrect ? 100 : 90 // dummy logic, refine as needed
-    });
-
-    setTypedText(""); // clear for next word
+  const value = e.target.value;
+  if (!isTyping) {
+    setIsTyping(true);
+    startTimeRef.current = Date.now(); // Set start time once
   }
+
+  setTypedText(value);
+    latestTypedTextRef.current = value;
+  // You can also send updates to Firebase here if needed.
 };
 
 
- const renderTypingArea = () => {
-  const words = (room?.paragraph || "").split(" ");
-  const currentPlayer = players.find(p => p.username === authUser);
-  const currentWordIndex = currentPlayer?.currentWord || 0;
+const renderTypingArea = () => { 
+  const paragraph = room?.paragraph || "";
+  const paraRefs = useRef([]);
+  
+  // Clear and reinitialize paraRefs
+  useEffect(() => {
+    paraRefs.current = [];
+  }, [paragraph]);
 
   return (
-    <div style={{ 
-      padding: "20px", 
-      borderRadius: "12px", 
-      background: "#1e293b",
-      marginBottom: "24px" 
-    }}>
+    <div style={{ padding: "20px", borderRadius: "12px", background: "#1e293b", marginBottom: "24px" }}>
       <h3 style={{ color: "#f8fafc", marginBottom: "12px" }}>Typing Text</h3>
 
-      <div style={{
-        fontFamily: "monospace",
-        fontSize: "18px",
-        lineHeight: "1.6",
-        background: "#0f172a",
-        padding: "20px",
-        borderRadius: "10px",
-        border: "1px solid #334155",
-        minHeight: "120px",
-        maxHeight: "200px",
-        overflow: "auto",
-        wordWrap: "break-word",
-        whiteSpace: "pre-wrap"
-      }}>
-        {words.map((word, i) => {
-          let style = { 
-            color: "#64748b", 
-            marginRight: "8px",
-            display: "inline-block"
-          };
-
-          if (i < currentWordIndex) style.color = "#10b981"; // completed
-          if (i === currentWordIndex) {
-            // Color current word with per-letter accuracy
-            const letters = word.split("").map((char, index) => {
-              let color = "#94a3b8"; // neutral
-              if (typedText[index] === char) color = "#10b981"; // correct
-              else if (typedText[index] !== undefined) color = "#ef4444"; // incorrect
-
-              return <span key={index} style={{ color }}>{char}</span>;
-            });
-
-            return (
-              <span key={i} style={style}>
-                {letters}
-              </span>
-            );
+      <div
+        style={{
+          fontFamily: "monospace",
+          fontSize: "18px",
+          lineHeight: "1.6",
+          background: "#0f172a",
+          padding: "20px",
+          borderRadius: "10px",
+          border: "1px solid #334155",
+          minHeight: "120px",
+          maxHeight: "200px",
+          overflow: "auto",
+          wordWrap: "break-word",
+          whiteSpace: "pre-wrap",
+          cursor: "text"
+        }}
+        onClick={() => inputRef.current?.focus()}
+      >
+        {paragraph.split("").map((char, index) => {
+          let color = "gray";
+          if (index < typedText.length) {
+            color = typedText[index] === char ? "white" : "red";
           }
 
-          return <span key={i} style={style}>{word}</span>;
+          if (!paraRefs.current[index]) {
+            paraRefs.current[index] = React.createRef();
+          }
+
+          return (
+            <React.Fragment key={index}>
+              {index === typedText.length && isTyping && (
+                <span className="cursor" style={{ color: "white" }}>|</span>
+              )}
+              <span ref={paraRefs.current[index]} style={{ color }}>{char}</span>
+            </React.Fragment>
+          );
         })}
       </div>
 
-      {/* Hidden input to capture typing */}
       <input
         ref={inputRef}
         type="text"
         value={typedText}
         onChange={handleTyping}
+        maxLength={paragraph.length}
         style={{
           opacity: 0,
           position: "absolute",
@@ -683,6 +793,7 @@ const handleTyping = (e) => {
     </div>
   );
 };
+
 
   const renderLeaderboard = () => (
     <div style={{
@@ -856,13 +967,20 @@ const handleTyping = (e) => {
   return (
     <>
     
-    {showWinnerAnimation && (
+   {showWinnerAnimation && (
   <div className="winner-animation">
-    <h1 className="winner-text">🎉 You Won!</h1>
+    <h1 className="winner-text">
+      {authUser.username === winner ? "🎉 You Won!" : "😢 You Lost"}
+    </h1>
+
     <p className="subtext">Redirecting to performance analysis...</p>
-    <div className="trophy-animation">🏆</div>
+
+    <div className="animation-icon">
+      {authUser.username === winner ? "🏆" : "💔"}
+    </div>
   </div>
 )}
+
 
 
     <div style={{
@@ -878,7 +996,7 @@ const handleTyping = (e) => {
         width: '100%'
       }}>
         {renderHeader()}
-        {renderRaceTrack()}
+        {/* {renderRaceTrack()} */}
         {renderTypingArea()}
         
         <div style={{
