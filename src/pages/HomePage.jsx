@@ -170,7 +170,7 @@ function HomePage() {
     setCorrect(0)
     setIncorrect(0)
 
-    setEndTime(null)
+    setEndTime(Date.now() + 10000)
     setIsStarted(false)
     console.log(paraRefs.current)
     paraRefs.current.forEach(ref => {
