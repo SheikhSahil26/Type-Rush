@@ -1,12 +1,74 @@
-# React + Vite
+# ⚡ TypeRush 🧠⌨️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time multiplayer typing race game where speed, accuracy, and thrill collide! Compete with friends or strangers, test your WPM, and climb the leaderboard 🏁
 
-Currently, two official plugins are available:
+![Banner](./assets/Screenshot%202025-07-14%20141038.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## 🚀 Live Demo
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+> 🌐 [TypeRush Live](https://type-rush-three.vercel.app)  
+> 🔗 [Frontend Code](./frontend) • [Backend Code](./backend)
+
+---
+
+## 🎮 Gameplay Preview
+
+![Gameplay](./assets/Screenshot%202025-07-14%20141204.png)
+
+Challenge opponents in a high-stakes race! Get real-time stats like **WPM**, **Accuracy**, and **Character Progress** as you type your way to victory.
+
+---
+
+## 🧩 Features
+
+- 🧑‍🤝‍🧑 Real-time multiplayer typing rooms
+- 🔐 Secure login & matchmaking
+- 📈 Dynamic WPM & accuracy graphs
+- 🏆 Animated results screen with rankings
+- 🔔 Real-time notifications using Firebase
+- 📊 Leaderboards and personal performance stats
+
+---
+
+## 🖼️ Screenshots
+
+### 🏁 Room Lobby
+> Invite or wait for an opponent to join...
+
+![Room Preview](./assets/Screenshot%202025-07-14%20141224.png)
+
+### 🏆 Results & Graphs
+> See your performance over time with animated WPM and Accuracy charts.
+
+![Game Results](./assets/Screenshot%202025-07-14%20141524.png)
+
+---
+
+## 🛠️ Tech Stack
+
+| Frontend       | Backend        | Real-time DB    | Auth & Hosting |
+|----------------|----------------|-----------------|----------------|
+| React + Vite   | Express.js     | Firebase RTDB   | Firebase       |
+| Tailwind CSS   | Node.js        | Realtime Events | JWT / Cookies  |
+| Recharts       | REST APIs      |                 |                |
+
+---
+
+## ⚙️ Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/typerush.git
+cd typerush
+
+# Setup frontend
+cd frontend
+npm install
+npm run dev
+
+# Setup backend
+cd ../backend
+npm install
+npm run dev
